@@ -1,5 +1,4 @@
 #include <stdio.h>
-// #include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -21,12 +20,12 @@ int   jpgToPDF(const char *openName, const char *saveName);
 
 int main(int argc, char *argv[])
 {
-    if (argc >= 2) {
-        return (jpgToPDF(argv[1], "jpg2pdf.pdf"));
-    }
-    else {
-        printf("Not Found!\n");
-        return (0);
+    if (argc == 2) {
+        return jpgToPDF(argv[1], "jpg2pdf.pdf");
+    } else {
+        printf("Error: Incorrect execution format.\n");
+        printf("Execution format: jpg2pdf [inputFileName]\n");
+        return 0;
     }
 }
 
@@ -44,6 +43,7 @@ DWORD getFileSize(FILE *fp)
     fseek(fp, 0, SEEK_END);
     size = ftell(fp);
     fseek(fp, pos, SEEK_SET);
+
     return size;
 }
 
@@ -57,14 +57,18 @@ BOOL copyStream(FILE *src, FILE *dest)
     fileSize = getFileSize(src);
 
     buffer = (BYTE *)malloc(fileSize);
-    if (buffer == NULL)
+
+    if (buffer == NULL) {
         return FALSE;
+    }
+
     fseek(src, 0, SEEK_SET);
     fread(buffer, 1, fileSize, src);
     fwrite(buffer, 1, fileSize, dest);
     free(buffer);
 
     fseek(src, pos, SEEK_SET);
+
     return TRUE;
 }
 
@@ -206,22 +210,22 @@ int jpgToPDF(const char *openName, const char *saveName)
     /* Open JPG File */
     jpgStream = fopen(openName, "rb");
     if (jpgStream == NULL) {
-        printf("Error : Can not Open File.\n");
-        return (-1);
+        printf("Error: Can not open file.\n");
+        return -1;
     }
 
     /* Get JPG size */
     if (getJPGSize(jpgStream, &w, &h, &cmyk) == FALSE) {
-        printf("Error : Can not get JPG size.\n");
-        return (-1);
+        printf("Error: Can not get JPG size.\n");
+        return -1;
     }
 
     /* Create PDF File */
     aStream = fopen(saveName, "wb+");
     if (aStream == NULL) {
-        printf("Error : Can not Create File.\n");
+        printf("Error: Can not create file.\n");
         fclose(jpgStream);
-        return (-1);
+        return -1;
     }
 
     /* ------------------------------------------------------------- */
