@@ -300,7 +300,7 @@ int jpgToPDF(const char *openName, const char *saveName)
 
     if (copyStream(jpgStream, aStream) == FALSE) {
         printf("Error : No Memory \n");
-        return (-1);
+        return -1;
     }
 
     fprintf(aStream, "endstream\n");
@@ -328,5 +328,5 @@ int jpgToPDF(const char *openName, const char *saveName)
 
     printf("\nSuccess!\n");
 
-    return (0);
+    return 0;
 }
