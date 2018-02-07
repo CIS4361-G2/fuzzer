@@ -13,11 +13,11 @@ typedef unsigned long       DWORD;
 
 WORD  swapEndian(WORD S);
 DWORD getFileSize(FILE *fp);
-BOOL  copyStream(FILE *Src, FILE *Dest);
-BOOL  getJPGSize(FILE *JPGStream, WORD *AWidth, WORD *AHeight, BOOL *CMYK);
-void  writeCrossReferenceTable(FILE *AStream, DWORD ObjectPosArray[], int Count);
-void  writeContentsObject(FILE *AStream, DWORD ObjectPosArray[], int *ObjectIndex, int w, int h);
-int   jpgToPDF(const char *OpenName, const char *SaveName);
+BOOL  copyStream(FILE *src, FILE *dest);
+BOOL  getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk);
+void  writeCrossReferenceTable(FILE *aStream, DWORD objectPosArray[], int Count);
+void  writeContentsObject(FILE *aStream, DWORD objectPosArray[], int *objectIndex, int w, int h);
+int   jpgToPDF(const char *openName, const char *saveName);
 
 int main(int argc, char *argv[])
 {
@@ -37,47 +37,47 @@ WORD swapEndian(WORD S)
 
 DWORD getFileSize(FILE *fp)
 {
-    int Pos;
-    DWORD Size;
+    int pos;
+    DWORD size;
 
-    Pos = ftell(fp);
-    fseek(fp, 0, SEEK_END );
-    Size = ftell(fp);
-    fseek(fp, Pos, SEEK_SET );
-    return Size;
+    pos = ftell(fp);
+    fseek(fp, 0, SEEK_END);
+    size = ftell(fp);
+    fseek(fp, pos, SEEK_SET);
+    return size;
 }
 
-BOOL copyStream(FILE *Src, FILE *Dest)
+BOOL copyStream(FILE *src, FILE *dest)
 {
     BYTE  *buffer;
-    int   Pos;
-    DWORD FileSize;
+    int   pos;
+    DWORD fileSize;
 
-    Pos = ftell(Src);
-    FileSize = getFileSize(Src);
+    pos = ftell(src);
+    fileSize = getFileSize(src);
 
-    buffer = (BYTE *)malloc(FileSize);
+    buffer = (BYTE *)malloc(fileSize);
     if (buffer == NULL)
         return FALSE;
-    fseek(Src, 0, SEEK_SET);
-    fread(buffer, 1, FileSize, Src);
-    fwrite(buffer, 1, FileSize, Dest);
+    fseek(src, 0, SEEK_SET);
+    fread(buffer, 1, fileSize, src);
+    fwrite(buffer, 1, fileSize, dest);
     free(buffer);
 
-    fseek(Src, Pos, SEEK_SET);
+    fseek(src, pos, SEEK_SET);
     return TRUE;
 }
 
-BOOL getJPGSize(FILE *JPGStream, WORD *AWidth, WORD *AHeight, BOOL *CMYK)
+BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
 {
     WORD wrk;
-    BYTE Sampling;
+    BYTE sampling;
 
     WORD SOF0 = 0xFFC0; /* Normal */
     WORD SOF2 = 0xFFC2; /* Progressive */
 
     /* JFIF */
-    if (fread(&wrk, 2, 1, JPGStream) < 1) {
+    if (fread(&wrk, 2, 1, jpgStream) < 1) {
         return FALSE;
     }
 
@@ -86,7 +86,7 @@ BOOL getJPGSize(FILE *JPGStream, WORD *AWidth, WORD *AHeight, BOOL *CMYK)
     }
 
     while (1) {
-        if (fread(&wrk, 2, 1, JPGStream) < 1) {
+        if (fread(&wrk, 2, 1, jpgStream) < 1) {
             return FALSE;
         }
 
@@ -95,40 +95,40 @@ BOOL getJPGSize(FILE *JPGStream, WORD *AWidth, WORD *AHeight, BOOL *CMYK)
         /* JPG Maker */
         if ((wrk == SOF0) | (wrk == SOF2)) {
             /* Skip Segment Length  */
-            if (fseek(JPGStream, ftell(JPGStream) + 2, SEEK_SET)) {
+            if (fseek(jpgStream, ftell(jpgStream) + 2, SEEK_SET)) {
                 return FALSE;
             }
 
             /* Skip Sample */
-            if (fseek(JPGStream, ftell(JPGStream) + 1, SEEK_SET)) {
+            if (fseek(jpgStream, ftell(jpgStream) + 1, SEEK_SET)) {
                 return FALSE;
             }
 
             /* Height */
-            if (fread(&wrk, 2, 1, JPGStream) < 1) {
+            if (fread(&wrk, 2, 1, jpgStream) < 1) {
                 return FALSE;
             }
 
-            *AHeight = swapEndian(wrk);
+            *aHeight = swapEndian(wrk);
 
             /* Width */
-            if (fread(&wrk, 2, 1, JPGStream) < 1) {
+            if (fread(&wrk, 2, 1, jpgStream) < 1) {
                 return FALSE;
             }
 
-            *AWidth = swapEndian(wrk);
+            *aWidth = swapEndian(wrk);
 
             /* ColorMode */
-            if (fread(&Sampling, 1, 1, JPGStream) < 1) {
+            if (fread(&sampling, 1, 1, jpgStream) < 1) {
                 return FALSE;
             }
 
-            switch (Sampling) {
+            switch (sampling) {
                 case 3: /* RGB  */
-                    *CMYK = FALSE;
+                    *cmyk = FALSE;
                     break;
                 case 4: /* CMYK */
-                    *CMYK = TRUE;
+                    *cmyk = TRUE;
                     break;
                 default: /* ???  */
                     return FALSE;
@@ -140,87 +140,87 @@ BOOL getJPGSize(FILE *JPGStream, WORD *AWidth, WORD *AHeight, BOOL *CMYK)
         }
 
         /* Skip Segment */
-        if (fread(&wrk, 2, 1, JPGStream) < 1) {
+        if (fread(&wrk, 2, 1, jpgStream) < 1) {
             return FALSE;
         }
 
-        if (fseek(JPGStream, ftell(JPGStream) + swapEndian(wrk) - 2, SEEK_SET)) {
+        if (fseek(jpgStream, ftell(jpgStream) + swapEndian(wrk) - 2, SEEK_SET)) {
             return FALSE;
         }
     }
 }
 
-void writeCrossReferenceTable(FILE *AStream, DWORD ObjectPosArray[], int Count)
+void writeCrossReferenceTable(FILE *aStream, DWORD objectPosArray[], int Count)
 {
     int i;
 
-    fprintf(AStream, "xref\n");
-    fprintf(AStream, "0 %d\n", Count + 1);
-    fprintf(AStream, "0000000000 65535 f \n");
+    fprintf(aStream, "xref\n");
+    fprintf(aStream, "0 %d\n", Count + 1);
+    fprintf(aStream, "0000000000 65535 f \n");
 
     for (i = 0; i <= Count - 1; i++) {
-        fprintf(AStream, "%0.10lu 00000 n \n", ObjectPosArray[i]);
+        fprintf(aStream, "%0.10lu 00000 n \n", objectPosArray[i]);
     }
 }
 
-void writeContentsObject(FILE *AStream, DWORD ObjectPosArray[], int *ObjectIndex, int w, int h)
+void writeContentsObject(FILE *aStream, DWORD objectPosArray[], int *objectIndex, int w, int h)
 {
-    int Length;
+    int length;
 
     /* Contents */
-    ObjectPosArray[*ObjectIndex]  = (DWORD)ftell(AStream);
-    fprintf(AStream, "%d 0 obj\n", *ObjectIndex + 1);
-    fprintf(AStream, "<< /Length %d 0 R >>\n", *ObjectIndex + 2);
-    fprintf(AStream, "stream\n");
+    objectPosArray[*objectIndex]  = (DWORD)ftell(aStream);
+    fprintf(aStream, "%d 0 obj\n", *objectIndex + 1);
+    fprintf(aStream, "<< /Length %d 0 R >>\n", *objectIndex + 2);
+    fprintf(aStream, "stream\n");
 
     /* stream */
-    Length = ftell(AStream);
-    fprintf(AStream, "q\n");
-    fprintf(AStream, "%d 0 0 %d 0 0 cm\n", w, h);
-    fprintf(AStream, "/Im0 Do\n");
-    fprintf(AStream, "Q\n");
-    Length = ftell(AStream) - Length;
+    length = ftell(aStream);
+    fprintf(aStream, "q\n");
+    fprintf(aStream, "%d 0 0 %d 0 0 cm\n", w, h);
+    fprintf(aStream, "/Im0 Do\n");
+    fprintf(aStream, "Q\n");
+    length = ftell(aStream) - length;
 
-    fprintf(AStream, "endstream\n");
-    fprintf(AStream, "endobj\n");
-    *ObjectIndex = *ObjectIndex + 1;
+    fprintf(aStream, "endstream\n");
+    fprintf(aStream, "endobj\n");
+    *objectIndex = *objectIndex + 1;
 
-    /* stream Length */
-    ObjectPosArray[*ObjectIndex] = (DWORD)ftell(AStream);
-    fprintf(AStream, "%d 0 obj\n", *ObjectIndex + 1);
-    fprintf(AStream, "%d\n", Length);
-    fprintf(AStream, "endobj\n");
-    *ObjectIndex = *ObjectIndex + 1;
+    /* stream length */
+    objectPosArray[*objectIndex] = (DWORD)ftell(aStream);
+    fprintf(aStream, "%d 0 obj\n", *objectIndex + 1);
+    fprintf(aStream, "%d\n", length);
+    fprintf(aStream, "endobj\n");
+    *objectIndex = *objectIndex + 1;
 }
 
-int jpgToPDF(const char *OpenName, const char *SaveName)
+int jpgToPDF(const char *openName, const char *saveName)
 {
     BOOL  cmyk;
     WORD  w, h;
-    int   ObjectIndex;
-    DWORD ObjectPosArray[10];
-    FILE  *JPGStream, *AStream;
+    int   objectIndex;
+    DWORD objectPosArray[10];
+    FILE  *jpgStream, *aStream;
 
-    ObjectIndex = 0;
+    objectIndex = 0;
 
     /* Open Jpeg File */
-    JPGStream = fopen(OpenName, "rb");
-    if (JPGStream == NULL) {
+    jpgStream = fopen(openName, "rb");
+    if (jpgStream == NULL) {
         printf("Error : Can not Open File.\n");
         return (-1);
     }
 
     /* Get JPG size */
-    if (getJPGSize(JPGStream, &w, &h, &cmyk) == FALSE) {
+    if (getJPGSize(jpgStream, &w, &h, &cmyk) == FALSE) {
         printf("Error : Can not get JPG size.\n");
         return (-1);
     }
 
     /* Create PDF File */
-    AStream = fopen(SaveName, "wb+");
-    if (AStream == NULL) {
+    aStream = fopen(saveName, "wb+");
+    if (aStream == NULL) {
         printf("Error : Can not Create File.\n");
-        fclose(JPGStream);
+        fclose(jpgStream);
         return (-1);
     }
 
@@ -229,98 +229,98 @@ int jpgToPDF(const char *OpenName, const char *SaveName)
     /* ------------------------------------------------------------- */
 
     /* PDF version */
-    fprintf(AStream, "%%PDF-1.2\n");
+    fprintf(aStream, "%%PDF-1.2\n");
 
     /* Catalog */
-    ObjectPosArray[ObjectIndex] = ftell(AStream);
-    fprintf(AStream, "%d 0 obj\n", ObjectIndex + 1);
-    fprintf(AStream, "<<\n");
-    fprintf(AStream, "/Type /Catalog\n");
-    fprintf(AStream, "/Pages 2 0 R\n");
+    objectPosArray[objectIndex] = ftell(aStream);
+    fprintf(aStream, "%d 0 obj\n", objectIndex + 1);
+    fprintf(aStream, "<<\n");
+    fprintf(aStream, "/Type /Catalog\n");
+    fprintf(aStream, "/Pages 2 0 R\n");
     /* View Option (100%) */
-    /*fprintf(AStream,"/OpenAction [3 0 R /XYZ -32768 -32768 1 ]\n"); */
-    fprintf(AStream, ">>\n");
-    fprintf(AStream, "endobj\n");
-    ObjectIndex++;
+    /*fprintf(aStream,"/OpenAction [3 0 R /XYZ -32768 -32768 1 ]\n"); */
+    fprintf(aStream, ">>\n");
+    fprintf(aStream, "endobj\n");
+    objectIndex++;
 
     /* Parent Pages */
-    ObjectPosArray[ObjectIndex] = ftell(AStream);
-    fprintf(AStream, "%d 0 obj\n", ObjectIndex + 1);
-    fprintf(AStream, "<<\n");
-    fprintf(AStream, "/Type /Pages\n");
-    fprintf(AStream, "/Kids [ 3 0 R ]\n");
-    fprintf(AStream, "/Count 1\n");
-    fprintf(AStream, ">>\n");
-    fprintf(AStream, "endobj\n");
-    ObjectIndex++;
+    objectPosArray[objectIndex] = ftell(aStream);
+    fprintf(aStream, "%d 0 obj\n", objectIndex + 1);
+    fprintf(aStream, "<<\n");
+    fprintf(aStream, "/Type /Pages\n");
+    fprintf(aStream, "/Kids [ 3 0 R ]\n");
+    fprintf(aStream, "/Count 1\n");
+    fprintf(aStream, ">>\n");
+    fprintf(aStream, "endobj\n");
+    objectIndex++;
 
     /* Kids Page */
-    ObjectPosArray[ObjectIndex] = ftell(AStream);
-    fprintf(AStream, "%d 0 obj\n", ObjectIndex + 1);
-    fprintf(AStream, "<<\n");
-    fprintf(AStream, "/Type /Page\n");
-    fprintf(AStream, "/Parent 2 0 R\n");
-    fprintf(AStream, "/Resources\n");
-    fprintf(AStream, "<<\n");
-    fprintf(AStream, "/XObject << /Im0 4 0 R >>\n");
-    fprintf(AStream, "/ProcSet [ /PDF /ImageC ]\n");
-    fprintf(AStream, ">>\n");
-    fprintf(AStream, "/MediaBox [ 0 0 %d %d ]\n", w, h);
-    fprintf(AStream, "/Contents 5 0 R\n");
-    fprintf(AStream, ">>\n");
-    fprintf(AStream, "endobj\n");
-    ObjectIndex++;
+    objectPosArray[objectIndex] = ftell(aStream);
+    fprintf(aStream, "%d 0 obj\n", objectIndex + 1);
+    fprintf(aStream, "<<\n");
+    fprintf(aStream, "/Type /Page\n");
+    fprintf(aStream, "/Parent 2 0 R\n");
+    fprintf(aStream, "/Resources\n");
+    fprintf(aStream, "<<\n");
+    fprintf(aStream, "/XObject << /Im0 4 0 R >>\n");
+    fprintf(aStream, "/ProcSet [ /PDF /ImageC ]\n");
+    fprintf(aStream, ">>\n");
+    fprintf(aStream, "/MediaBox [ 0 0 %d %d ]\n", w, h);
+    fprintf(aStream, "/Contents 5 0 R\n");
+    fprintf(aStream, ">>\n");
+    fprintf(aStream, "endobj\n");
+    objectIndex++;
 
     /* XObject Resource */
-    ObjectPosArray[ObjectIndex] = ftell(AStream);
-    fprintf(AStream, "%d 0 obj\n", ObjectIndex + 1);
+    objectPosArray[objectIndex] = ftell(aStream);
+    fprintf(aStream, "%d 0 obj\n", objectIndex + 1);
 
-    fprintf(AStream, "<<\n");
-    fprintf(AStream, "/Type /XObject\n");
-    fprintf(AStream, "/Subtype /Image\n");
-    fprintf(AStream, "/Name /Im0\n");
-    fprintf(AStream, "/Width %d\n", w);
-    fprintf(AStream, "/Height %d\n", h);
-    fprintf(AStream, "/BitsPerComponent 8\n");
-    fprintf(AStream, "/Filter [/DCTDecode]\n");
+    fprintf(aStream, "<<\n");
+    fprintf(aStream, "/Type /XObject\n");
+    fprintf(aStream, "/Subtype /Image\n");
+    fprintf(aStream, "/Name /Im0\n");
+    fprintf(aStream, "/Width %d\n", w);
+    fprintf(aStream, "/Height %d\n", h);
+    fprintf(aStream, "/BitsPerComponent 8\n");
+    fprintf(aStream, "/Filter [/DCTDecode]\n");
 
     if (cmyk == FALSE) {
-        fprintf(AStream, "/ColorSpace /DeviceRGB\n");
+        fprintf(aStream, "/ColorSpace /DeviceRGB\n");
     } else {
-        fprintf(AStream, "/ColorSpace /DeviceCMYK\n");
-        fprintf(AStream, "/Decode[1 0 1 0 1 0 1 0]\n"); /* Photoshop CMYK (NOT BIT) */
+        fprintf(aStream, "/ColorSpace /DeviceCMYK\n");
+        fprintf(aStream, "/Decode[1 0 1 0 1 0 1 0]\n"); /* Photoshop CMYK (NOT BIT) */
     }
 
-    fprintf(AStream, "/Length %lu >>\n", getFileSize(JPGStream));
-    fprintf(AStream, "stream\n");
+    fprintf(aStream, "/Length %lu >>\n", getFileSize(jpgStream));
+    fprintf(aStream, "stream\n");
 
-    if (copyStream(JPGStream, AStream) == FALSE) {
+    if (copyStream(jpgStream, aStream) == FALSE) {
         printf("Error : No Memory \n");
         return (-1);
     }
 
-    fprintf(AStream, "endstream\n");
-    fprintf(AStream, "endobj\n");
-    ObjectIndex++;
+    fprintf(aStream, "endstream\n");
+    fprintf(aStream, "endobj\n");
+    objectIndex++;
 
     /* Contents Stream & Object */
-    writeContentsObject(AStream, ObjectPosArray, &ObjectIndex, w, h);
+    writeContentsObject(aStream, objectPosArray, &objectIndex, w, h);
 
     /* CrossReferenceTable */
-    ObjectPosArray[ObjectIndex] = ftell(AStream);
-    writeCrossReferenceTable(AStream, ObjectPosArray, (int)ObjectIndex);
+    objectPosArray[objectIndex] = ftell(aStream);
+    writeCrossReferenceTable(aStream, objectPosArray, (int)objectIndex);
 
     /* trailer */
-    fprintf(AStream, "trailer\n");
-    fprintf(AStream, "<<\n");
-    fprintf(AStream, "/Size %d\n", ObjectIndex + 1);
-    fprintf(AStream, "/Root 1 0 R\n");
-    fprintf(AStream, ">>\n");
-    fprintf(AStream, "startxref\n");
-    fprintf(AStream, "%lu\n", ObjectPosArray[ObjectIndex]);
-    fprintf(AStream, "%%%%EOF\n");
+    fprintf(aStream, "trailer\n");
+    fprintf(aStream, "<<\n");
+    fprintf(aStream, "/Size %d\n", objectIndex + 1);
+    fprintf(aStream, "/Root 1 0 R\n");
+    fprintf(aStream, ">>\n");
+    fprintf(aStream, "startxref\n");
+    fprintf(aStream, "%lu\n", objectPosArray[objectIndex]);
+    fprintf(aStream, "%%%%EOF\n");
 
-    fclose(JPGStream); fclose(AStream);
+    fclose(jpgStream); fclose(aStream);
 
     printf("\nSuccess!\n");
 
