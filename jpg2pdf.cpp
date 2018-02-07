@@ -203,7 +203,7 @@ int jpgToPDF(const char *openName, const char *saveName)
 
     objectIndex = 0;
 
-    /* Open Jpeg File */
+    /* Open JPG File */
     jpgStream = fopen(openName, "rb");
     if (jpgStream == NULL) {
         printf("Error : Can not Open File.\n");
