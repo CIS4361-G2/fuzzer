@@ -2,10 +2,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Copy a JPG file to another file
+// Copy a JPG file to a new file
 FILE *copyJPG(char *jpgInputFileName, char *jpgCopyFileName)
 {
     FILE *jpgSource, *jpgCopy;
+
     int i = 0;
     int jpgLength;
 
@@ -39,30 +40,37 @@ FILE *copyJPG(char *jpgInputFileName, char *jpgCopyFileName)
     return jpgCopy;
 }
 
-int main(int argc, char *argv[])
+char *createSystemString(char *jpgFileName)
 {
-    char *jpgInputFileName = argv[1];
-    char *jpgCopyFileName = argv[2];
-
-    char systemString[72];
+    char *systemString;
     char systemStringA[11];
     char systemStringB[50];
     char systemStringC[13];
 
+    systemString = malloc(sizeof(char) * 72);
+
     strcpy(systemString, "");
     strcpy(systemStringA, "./jpg2pdf ");
-    strcpy(systemStringB, jpgCopyFileName);
+    strcpy(systemStringB, jpgFileName);
     strcpy(systemStringC, " > /dev/null");
 
     strcat(systemString, systemStringA);
     strcat(systemString, systemStringB);
     strcat(systemString, systemStringC);
 
+    return systemString;
+}
+
+int main(int argc, char *argv[])
+{
+    // Copy the source JPG to ensure that we don't modify the source directly
+    FILE *jpgCopy = copyJPG(argv[1], argv[2]);
+
+    // Create the command to have the system execute
+    char *systemString = createSystemString(argv[2]);
+
     // Can be used to ensure that the systemString is correctly built
     // printf("%s\n", systemString);
-
-    // Copy the source JPG to ensure that we don't modify the source directly
-    FILE *jpgCopy = copyJPG(jpgInputFileName, jpgCopyFileName);
 
     int i = 0;
 
@@ -74,15 +82,19 @@ int main(int argc, char *argv[])
             printf("CRASH\n");
             return 0;
         }
+
         // The carriage return ("\r") moves the cursor to the line start
         // This prevents this line from printing many times
         // Instead it just overwrites itself
         printf("\r%d iterations...", i++);
+
         // This causes the print lines to print with every iteration
         fflush(stdout);
     }
 
     printf("\n");
+
+    free(systemString);
 
     // Ensure that the program reached the end of execution...
     printf("The end of the road...\n");
