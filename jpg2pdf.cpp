@@ -146,7 +146,7 @@ void Write_CrossReferenceTable(FILE *AStream,DWORD ObjectPosArray[],int Count)
    fprintf(AStream,"0000000000 65535 f \n");
 
    for (i= 0; i<=Count-1;i++)
-      fprintf(AStream,"%0.10d 00000 n \n",ObjectPosArray[i]);
+      fprintf(AStream,"%0.10lu 00000 n \n",ObjectPosArray[i]);
 }
 
 void Write_ContentsObject(FILE *AStream,DWORD ObjectPosArray[],int *ObjectIndex,int w,int h)
@@ -279,7 +279,7 @@ int JPGtoPDF(const char *OpenName,const char *SaveName)
          fprintf(AStream,"/ColorSpace /DeviceCMYK\n");
          fprintf(AStream,"/Decode[1 0 1 0 1 0 1 0]\n"); /* Photoshop CMYK (NOT BIT) */
        }
-       fprintf(AStream,"/Length %d >>\n",GetFileSize(JPGStream));
+       fprintf(AStream,"/Length %lu >>\n",GetFileSize(JPGStream));
        fprintf(AStream,"stream\n");
        if (CopyStream(JPGStream,AStream)==FALSE)
        {
@@ -304,7 +304,7 @@ int JPGtoPDF(const char *OpenName,const char *SaveName)
     fprintf(AStream,"/Root 1 0 R\n");
     fprintf(AStream,">>\n");
     fprintf(AStream,"startxref\n");
-    fprintf(AStream,"%d\n",ObjectPosArray[ObjectIndex]);
+    fprintf(AStream,"%lu\n",ObjectPosArray[ObjectIndex]);
     fprintf(AStream,"%%%%EOF\n");
 
     fclose(JPGStream); fclose(AStream);
