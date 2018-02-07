@@ -11,31 +11,31 @@ typedef unsigned long       DWORD;
 #define FALSE               0
 #define TRUE                1
 
-WORD  SwapEndian(WORD S);
-DWORD GetFileSize(FILE *fp);
-BOOL  CopyStream(FILE *Src, FILE *Dest);
-BOOL  GetJPEGSize(FILE *JPGStream, WORD *AWidth, WORD *AHeight, BOOL *CMYK);
-void  Write_CrossReferenceTable(FILE *AStream, DWORD ObjectPosArray[], int Count);
-void  Write_ContentsObject(FILE *AStream, DWORD ObjectPosArray[], int *ObjectIndex, int w, int h);
-int   JPGtoPDF(const char *OpenName, const char *SaveName);
+WORD  swapEndian(WORD S);
+DWORD getFileSize(FILE *fp);
+BOOL  copyStream(FILE *Src, FILE *Dest);
+BOOL  getJPGSize(FILE *JPGStream, WORD *AWidth, WORD *AHeight, BOOL *CMYK);
+void  writeCrossReferenceTable(FILE *AStream, DWORD ObjectPosArray[], int Count);
+void  writeContentsObject(FILE *AStream, DWORD ObjectPosArray[], int *ObjectIndex, int w, int h);
+int   jpgToPDF(const char *OpenName, const char *SaveName);
 
 int main(int argc, char *argv[])
 {
-    if (argc >= 2)
-        return (JPGtoPDF(argv[1], "jpg2pdf.pdf"));
-    else
-    {
+    if (argc >= 2) {
+        return (jpgToPDF(argv[1], "jpg2pdf.pdf"));
+    }
+    else {
         printf("Not Found!\n");
         return (0);
     }
 }
 
-WORD SwapEndian(WORD S)
+WORD swapEndian(WORD S)
 {
-    return ((S & 0x00FF) << 8) | ((S & 0xFF00) >> 8)  ;
+    return ((S & 0x00FF) << 8) | ((S & 0xFF00) >> 8);
 }
 
-DWORD GetFileSize(FILE *fp)
+DWORD getFileSize(FILE *fp)
 {
     int Pos;
     DWORD Size;
@@ -47,14 +47,14 @@ DWORD GetFileSize(FILE *fp)
     return Size;
 }
 
-BOOL CopyStream(FILE *Src, FILE *Dest)
+BOOL copyStream(FILE *Src, FILE *Dest)
 {
     BYTE  *buffer;
     int   Pos;
     DWORD FileSize;
 
     Pos = ftell(Src);
-    FileSize = GetFileSize(Src);
+    FileSize = getFileSize(Src);
 
     buffer = (BYTE *)malloc(FileSize);
     if (buffer == NULL)
@@ -68,7 +68,7 @@ BOOL CopyStream(FILE *Src, FILE *Dest)
     return TRUE;
 }
 
-BOOL GetJPEGSize(FILE *JPGStream, WORD *AWidth, WORD *AHeight, BOOL *CMYK)
+BOOL getJPGSize(FILE *JPGStream, WORD *AWidth, WORD *AHeight, BOOL *CMYK)
 {
     WORD wrk;
     BYTE Sampling;
@@ -77,67 +77,80 @@ BOOL GetJPEGSize(FILE *JPGStream, WORD *AWidth, WORD *AHeight, BOOL *CMYK)
     WORD SOF2 = 0xFFC2; /* Progressive */
 
     /* JFIF */
-    if (fread(&wrk, 2, 1, JPGStream) < 1)
+    if (fread(&wrk, 2, 1, JPGStream) < 1) {
         return FALSE;
+    }
 
-    if (SwapEndian(wrk) != 0xFFD8)
+    if (swapEndian(wrk) != 0xFFD8) {
         return FALSE;
+    }
 
-    while (1)
-    {
-        if (fread(&wrk, 2, 1, JPGStream) < 1)
+    while (1) {
+        if (fread(&wrk, 2, 1, JPGStream) < 1) {
             return FALSE;
-        wrk = SwapEndian(wrk);
+        }
 
-        /* JPEG Maker */
-        if ((wrk == SOF0) | (wrk == SOF2))
-        {
+        wrk = swapEndian(wrk);
+
+        /* JPG Maker */
+        if ((wrk == SOF0) | (wrk == SOF2)) {
             /* Skip Segment Length  */
-            if (fseek(JPGStream, ftell(JPGStream) + 2, SEEK_SET))
+            if (fseek(JPGStream, ftell(JPGStream) + 2, SEEK_SET)) {
                 return FALSE;
+            }
 
             /* Skip Sample */
-            if (fseek(JPGStream, ftell(JPGStream) + 1, SEEK_SET))
+            if (fseek(JPGStream, ftell(JPGStream) + 1, SEEK_SET)) {
                 return FALSE;
+            }
 
             /* Height */
-            if (fread(&wrk, 2, 1, JPGStream) < 1)
+            if (fread(&wrk, 2, 1, JPGStream) < 1) {
                 return FALSE;
-            *AHeight = SwapEndian(wrk);
+            }
+
+            *AHeight = swapEndian(wrk);
 
             /* Width */
-            if (fread(&wrk, 2, 1, JPGStream) < 1)
+            if (fread(&wrk, 2, 1, JPGStream) < 1) {
                 return FALSE;
-            *AWidth = SwapEndian(wrk);
+            }
+
+            *AWidth = swapEndian(wrk);
 
             /* ColorMode */
-            if (fread(&Sampling, 1, 1, JPGStream) < 1)
+            if (fread(&Sampling, 1, 1, JPGStream) < 1) {
                 return FALSE;
+            }
 
-            switch (Sampling)
-            {
-            case 3  : *CMYK = FALSE; break; /* RGB  */
-            case 4  : *CMYK = TRUE ; break; /* CMYK */
-            default : return FALSE;         /* ???  */
+            switch (Sampling) {
+                case 3: /* RGB  */
+                    *CMYK = FALSE;
+                    break;
+                case 4: /* CMYK */
+                    *CMYK = TRUE;
+                    break;
+                default: /* ???  */
+                    return FALSE;
             }
 
             return TRUE;
-        }
-        else if ((wrk == 0xFFFF) | (wrk == 0xFFD9))
-        {
+        } else if ((wrk == 0xFFFF) | (wrk == 0xFFD9)) {
             return FALSE;
         }
 
         /* Skip Segment */
-        if (fread(&wrk, 2, 1, JPGStream) < 1)
+        if (fread(&wrk, 2, 1, JPGStream) < 1) {
             return FALSE;
+        }
 
-        if (fseek(JPGStream, ftell(JPGStream) + SwapEndian(wrk) - 2, SEEK_SET ))
+        if (fseek(JPGStream, ftell(JPGStream) + swapEndian(wrk) - 2, SEEK_SET)) {
             return FALSE;
+        }
     }
 }
 
-void Write_CrossReferenceTable(FILE *AStream, DWORD ObjectPosArray[], int Count)
+void writeCrossReferenceTable(FILE *AStream, DWORD ObjectPosArray[], int Count)
 {
     int i;
 
@@ -145,11 +158,12 @@ void Write_CrossReferenceTable(FILE *AStream, DWORD ObjectPosArray[], int Count)
     fprintf(AStream, "0 %d\n", Count + 1);
     fprintf(AStream, "0000000000 65535 f \n");
 
-    for (i = 0; i <= Count - 1; i++)
+    for (i = 0; i <= Count - 1; i++) {
         fprintf(AStream, "%0.10lu 00000 n \n", ObjectPosArray[i]);
+    }
 }
 
-void Write_ContentsObject(FILE *AStream, DWORD ObjectPosArray[], int *ObjectIndex, int w, int h)
+void writeContentsObject(FILE *AStream, DWORD ObjectPosArray[], int *ObjectIndex, int w, int h)
 {
     int Length;
 
@@ -179,7 +193,7 @@ void Write_ContentsObject(FILE *AStream, DWORD ObjectPosArray[], int *ObjectInde
     *ObjectIndex = *ObjectIndex + 1;
 }
 
-int JPGtoPDF(const char *OpenName, const char *SaveName)
+int jpgToPDF(const char *OpenName, const char *SaveName)
 {
     BOOL  cmyk;
     WORD  w, h;
@@ -191,23 +205,20 @@ int JPGtoPDF(const char *OpenName, const char *SaveName)
 
     /* Open Jpeg File */
     JPGStream = fopen(OpenName, "rb");
-    if (JPGStream == NULL)
-    {
+    if (JPGStream == NULL) {
         printf("Error : Can not Open File.\n");
         return (-1);
     }
 
-    /* Get JPEG size */
-    if (GetJPEGSize(JPGStream, &w, &h, &cmyk) == FALSE)
-    {
-        printf("Error : Can not get JPEG size.\n");
+    /* Get JPG size */
+    if (getJPGSize(JPGStream, &w, &h, &cmyk) == FALSE) {
+        printf("Error : Can not get JPG size.\n");
         return (-1);
     }
 
     /* Create PDF File */
     AStream = fopen(SaveName, "wb+");
-    if (AStream == NULL)
-    {
+    if (AStream == NULL) {
         printf("Error : Can not Create File.\n");
         fclose(JPGStream);
         return (-1);
@@ -272,30 +283,32 @@ int JPGtoPDF(const char *OpenName, const char *SaveName)
     fprintf(AStream, "/Height %d\n", h);
     fprintf(AStream, "/BitsPerComponent 8\n");
     fprintf(AStream, "/Filter [/DCTDecode]\n");
-    if (cmyk == FALSE)
+
+    if (cmyk == FALSE) {
         fprintf(AStream, "/ColorSpace /DeviceRGB\n");
-    else
-    {
+    } else {
         fprintf(AStream, "/ColorSpace /DeviceCMYK\n");
         fprintf(AStream, "/Decode[1 0 1 0 1 0 1 0]\n"); /* Photoshop CMYK (NOT BIT) */
     }
-    fprintf(AStream, "/Length %lu >>\n", GetFileSize(JPGStream));
+
+    fprintf(AStream, "/Length %lu >>\n", getFileSize(JPGStream));
     fprintf(AStream, "stream\n");
-    if (CopyStream(JPGStream, AStream) == FALSE)
-    {
+
+    if (copyStream(JPGStream, AStream) == FALSE) {
         printf("Error : No Memory \n");
         return (-1);
     }
+
     fprintf(AStream, "endstream\n");
     fprintf(AStream, "endobj\n");
     ObjectIndex++;
 
     /* Contents Stream & Object */
-    Write_ContentsObject(AStream, ObjectPosArray, &ObjectIndex, w, h);
+    writeContentsObject(AStream, ObjectPosArray, &ObjectIndex, w, h);
 
     /* CrossReferenceTable */
     ObjectPosArray[ObjectIndex] = ftell(AStream);
-    Write_CrossReferenceTable(AStream, ObjectPosArray, (int)ObjectIndex);
+    writeCrossReferenceTable(AStream, ObjectPosArray, (int)ObjectIndex);
 
     /* trailer */
     fprintf(AStream, "trailer\n");
