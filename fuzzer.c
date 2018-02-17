@@ -35,7 +35,6 @@ FILE *copyJPG(char *jpgInputFileName, char *jpgCopyFileName)
     printf("FUZZER: Image copied successfully.\n");
 
     fclose(jpgSource);
-    fclose(jpgCopy);
 
     return jpgCopy;
 }
@@ -74,6 +73,7 @@ int main(int argc, char *argv[])
 
     int i = 0;
 
+    // This is only set to 50 for testing purposes
     while (i <= 50) {
         // "> /dev/null" will redirect the output of jpg2pdf to nowhere
         // This prevents the output of jpg2pdf from printing to the terminal
@@ -86,17 +86,19 @@ int main(int argc, char *argv[])
         // The carriage return ("\r") moves the cursor to the line start
         // This prevents this line from printing many times
         // Instead it just overwrites itself
+        // This gives the effect that the number is updating in place
         printf("\r%d iterations...", i++);
 
-        // This causes the print lines to print with every iteration
+        // This ensures that C prints every line, not just sometimes
         fflush(stdout);
     }
 
     printf("\n");
 
     free(systemString);
+    fclose(jpgCopy);
 
-    // Ensure that the program reached the end of execution...
+    // Signal that the program reached the end of execution...
     printf("The end of the road...\n");
 
     return 0;
