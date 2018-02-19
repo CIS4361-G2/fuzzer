@@ -41,9 +41,6 @@ FILE *copyJPG(FILE *jpgSource, char *jpgCopyFileName)
 
     printf("FUZZER: Image copied successfully.\n");
 
-    // Ensure that the source file is closed
-    fclose(jpgSource);
-
     return jpgCopy;
 }
 
@@ -119,7 +116,9 @@ int main(int argc, char *argv[])
 
     // Clean up
     free(systemString);
+    fclose(jpgSource);
     fclose(jpgCopy);
+
 
     // Signal that the program reached the end of execution...
     if (DEBUG) printf("The end of the road...\n");
