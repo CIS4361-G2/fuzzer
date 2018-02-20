@@ -70,7 +70,7 @@ FILE *copyJPG(FILE *jpgSource, char *jpgCopyFileName)
     fseek(jpgSource, 0, SEEK_SET);
 
     // Append "_copy" to the source file
-    
+
 
     // Attempt to create a new file in write-binary mode (for JPG copy)
     jpgCopy = fopen(jpgCopyFileName, "wb");
