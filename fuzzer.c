@@ -6,6 +6,49 @@
 // Set to 0 to suppress debug messages
 #define DEBUG 1
 
+// Build a file name string with "_copy" appended
+// Example: example.jpg -> example_copy.jpg
+char *createJPGCopyFileName(char *jpgSourceFileName)
+{
+    char *appendedString;
+    char appendage[6];
+
+    int i;
+
+    appendedString = malloc(sizeof(char) * (strlen(jpgSourceFileName) + 5));
+
+    // Ensure that the string is null-terminated
+    // This prevents garbage from being present at the beginning of the string
+    appendedString[0] = '\0';
+
+    // This is what will be appended to the string
+    strcpy(appendage, "_copy");
+
+    // Find where the '.' character in the filename is located
+    for (i = 0; i < strlen(jpgSourceFileName); i++) {
+        if (jpgSourceFileName[i] == '.') {
+            break;
+        }
+    }
+
+    // Copy the filename up to (not including) the '.' character
+    // Example: "example" <- example.jpg
+    strncat(appendedString, jpgSourceFileName, i);
+
+    // Add "_copy" to the filename
+    // Example: "example_copy" <- example.jpg
+    strcat(appendedString, appendage);
+
+    // Add the rest of the filename; from (and including) '.' to the end of the filename
+    // Example: "example_copy.jpg" <- example.jpg
+    strcat(appendedString, &jpgSourceFileName[i]);
+
+    // Print the resulting string
+    if (DEBUG) printf("TEST: %s\n", appendedString);
+
+    return appendedString;
+}
+
 // Clone a JPG file into a newly created JPG file
 // jpgInputFile must already be openned elsewhere
 // jpgCopyFileName will be opened in this function
@@ -25,6 +68,9 @@ FILE *copyJPG(FILE *jpgSource, char *jpgCopyFileName)
     fseek(jpgSource, 0, SEEK_END);
     jpgLength = ftell(jpgSource);
     fseek(jpgSource, 0, SEEK_SET);
+
+    // Append "_copy" to the source file
+    
 
     // Attempt to create a new file in write-binary mode (for JPG copy)
     jpgCopy = fopen(jpgCopyFileName, "wb");
@@ -69,6 +115,9 @@ char *createSystemString(char *jpgFileName)
 
 int main(int argc, char *argv[])
 {
+    // TEST
+    char *jpgCopyFileName = createJPGCopyFileName(argv[1]);
+
     // Open the source JPG file
     FILE *jpgSource = fopen(argv[1], "rb");
     if (jpgSource == NULL) {
@@ -77,7 +126,7 @@ int main(int argc, char *argv[])
     }
 
     // Create a copy of the source JPG file
-    FILE *jpgCopy = copyJPG(jpgSource, argv[2]);
+    FILE *jpgCopy = copyJPG(jpgSource, jpgCopyFileName);
     if (jpgCopy == NULL) {
         printf("FUZZER: Cannot create %s\n", (argv[2] != NULL ? argv[2] : "JPG copy"));
         fclose(jpgSource);
