@@ -6,6 +6,34 @@
 // Set to 0 to suppress debug messages
 #define DEBUG 1
 
+typedef struct Jpgfileinfo {
+	FILE *jpgFile;
+	char *fileName;
+	unsigned long fileSize;
+} JPGFile;
+// Modifies the given number of bits using
+// limitations given via paramaters. The
+// JPGFile itself is modified, so nothing
+// is returned.
+void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int excludeFirst, int excludeLast) {
+	int numBits = file->fileSize * 8;
+	int *bits = (int*)calloc(numBits, sizeof(int));
+	int i = 0;
+	int k = 0;
+	char curChar;
+	fseek(file->jpgFile, 0, SEEK_SET);
+	for (i = 0; i < file -> fileSize; i++) {
+		curChar = fgetc(file->jpgFile);
+		for (k = 0; k < 8; k++) {
+			// Not 100% sure that this is correct.
+			bits[i + k] = (curChar & 128);
+			curChar <<= 1;
+		}
+	}
+
+
+}
+
 // Build a file name string with "_copy" appended
 // Example: example.jpg -> example_copy.jpg
 char *createJPGCopyFileName(char *jpgSourceFileName)
@@ -52,11 +80,18 @@ char *createJPGCopyFileName(char *jpgSourceFileName)
 // Clone a JPG file into a newly created JPG file
 // jpgInputFile must already be openned elsewhere
 // jpgCopyFileName will be opened in this function
-FILE *copyJPG(FILE *jpgSource, char *jpgCopyFileName)
+JPGFile *copyJPG(FILE *jpgSource, char *jpgCopyFileName)
 {
     FILE *jpgCopy;
     int i = 0;
     int jpgLength;
+	JPGFile *file = (JPGFile*)malloc(sizeof(JPGFile));
+
+	// Prepare our struct to store file information
+	if (file == NULL) {
+		printf("FUZZER: Unable to allocate memory for an object.\n");
+		return NULL;
+	}
 
     // Open the JPG source file in read-binary mode
     if (jpgSource == NULL) {
@@ -86,8 +121,15 @@ FILE *copyJPG(FILE *jpgSource, char *jpgCopyFileName)
     }
 
     printf("FUZZER: Image copied successfully.\n");
+    file->jpgFile = jpgCopy;
+	if (DEBUG) printf("Stored jpgCopy successfully.\n");
+	file->fileName = jpgCopyFileName;
+	if (DEBUG) printf("Stored jpgCopyFileName successfully.\n");
+	file->fileSize = jpgLength;
+	if (DEBUG) printf("Stored jpgLength successfully.\n");
 
-    return jpgCopy;
+	if (DEBUG) printf("Created JPGFile successfully.\n");
+	return file;
 }
 
 // Generate the string used for the system call to execute the jpg2pdf program
@@ -115,6 +157,11 @@ char *createSystemString(char *jpgFileName)
 
 int main(int argc, char *argv[])
 {
+	if (argc != 2) {
+		printf("Error: Incorrect execution format.\n");
+		printf("Execution format: fuzzer [source jpg file name]\n");
+		return 0;
+	}
     // TEST
     char *jpgCopyFileName = createJPGCopyFileName(argv[1]);
 
@@ -126,7 +173,7 @@ int main(int argc, char *argv[])
     }
 
     // Create a copy of the source JPG file
-    FILE *jpgCopy = copyJPG(jpgSource, jpgCopyFileName);
+	JPGFile *jpgCopy = copyJPG(jpgSource, jpgCopyFileName);
     if (jpgCopy == NULL) {
         printf("FUZZER: Cannot create %s\n", (argv[2] != NULL ? argv[2] : "JPG copy"));
         fclose(jpgSource);
@@ -166,7 +213,7 @@ int main(int argc, char *argv[])
     // Clean up
     free(systemString);
     fclose(jpgSource);
-    fclose(jpgCopy);
+    free(jpgCopy);
 
 
     // Signal that the program reached the end of execution...
