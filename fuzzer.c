@@ -4,7 +4,7 @@
 
 // Set to 1 to print debug messages
 // Set to 0 to suppress debug messages
-#define DEBUG 1
+#define DEBUG 0
 
 // Build a file name string with "_copy" appended
 // Example: example.jpg -> example_copy.jpg
@@ -50,8 +50,8 @@ char *createJPGCopyFileName(char *jpgSourceFileName)
 }
 
 // Clone a JPG file into a newly created JPG file
-// jpgInputFile must already be openned elsewhere
-// jpgCopyFileName will be opened in this function
+// jpgSource is a FILE pointer (FILE *)
+// jpgCopyFileName is a STRING (char *)
 FILE *copyJPG(FILE *jpgSource, char *jpgCopyFileName)
 {
     FILE *jpgCopy;
@@ -91,74 +91,91 @@ FILE *copyJPG(FILE *jpgSource, char *jpgCopyFileName)
 }
 
 // Generate the string used for the system call to execute the jpg2pdf program
-char *createSystemString(char *jpgFileName)
+char *createSystemString(char *jpgFileName, int fileNumber)
 {
-    char *systemString;
-    char systemStringA[11];
-    char systemStringB[50];
-    char systemStringC[13];
+    char *systemString = malloc(sizeof(char) * 100);
 
-    systemString = malloc(sizeof(char) * 72);
+    sprintf(systemString, "./jpg2pdf-%d %s > /dev/null", fileNumber, jpgFileName);
 
-    // Example: ./jpg2pdf example.jpg > /dev/null
-    strcpy(systemString, "");
-    strcpy(systemStringA, "./jpg2pdf ");
-    strcpy(systemStringB, jpgFileName);
-    strcpy(systemStringC, " > /dev/null");
-
-    strcat(systemString, systemStringA);
-    strcat(systemString, systemStringB);
-    strcat(systemString, systemStringC);
-
+    if (DEBUG) printf("System String: %s\n", systemString);
     return systemString;
 }
 
 int main(int argc, char *argv[])
 {
+    // A set of strings that represent the jpg2pdf versions
+    char version[10][10] = {
+        "jpg2pdf-0", "jpg2pdf-1", "jpg2pdf-2", "jpg2pdf-3", "jpg2pdf-4",
+        "jpg2pdf-5", "jpg2pdf-6", "jpg2pdf-7", "jpg2pdf-8", "jpg2pdf-9",
+    };
+
+    char *jpgSourceName = argv[1];
+    int start = atoi(argv[2]);
+    int end = atoi(argv[3]);
+    FILE *jpgSource = NULL;
+    FILE *jpgCopy = NULL;
+    char *systemString = NULL;
+
+    if (DEBUG) printf("1: %s\n2:%s\n3:%s\n", argv[1], argv[2], argv[3]);
+
     // TEST
-    char *jpgCopyFileName = createJPGCopyFileName(argv[1]);
+    char *jpgCopyFileName = createJPGCopyFileName(jpgSourceName);
 
     // Open the source JPG file
-    FILE *jpgSource = fopen(argv[1], "rb");
+    jpgSource = fopen(jpgSourceName, "rb");
     if (jpgSource == NULL) {
         printf("FUZZER: Cannot open source JPG\n");
         return -1;
     }
 
     // Create a copy of the source JPG file
-    FILE *jpgCopy = copyJPG(jpgSource, jpgCopyFileName);
+    jpgCopy = copyJPG(jpgSource, jpgCopyFileName);
     if (jpgCopy == NULL) {
-        printf("FUZZER: Cannot create %s\n", (argv[2] != NULL ? argv[2] : "JPG copy"));
+        // This line needs to be fixed (argv[2] is no longer the copy string)
+        printf("FUZZER: Cannot create JPG copy");
         fclose(jpgSource);
         return -1;
     }
 
-    // Create the command to have the system execute
-    char *systemString = createSystemString(argv[2]);
-
     int i = 0;
+    int iterationCount = 0;
+    int successCount = 0;
+    int failureCount = 0;
+    int systemReturnValue = 0;
+    int crashDetected = 0;
 
-    // Can be used to ensure that the systemString is correctly built
-    if (DEBUG) printf("%s\n", systemString);
+    for (i = start; i <= end; i++)
+    {
+        // Create the command to have the system execute
+        char *systemString = createSystemString(jpgCopyFileName, i);
 
-    // This is only set to 50 for testing purposes
-    while (i <= 50) {
-        // Example: system("./jpg2pdf example.jpg > /dev/null");
-        // "> /dev/null" will redirect the output of jpg2pdf to nowhere
-        // This prevents the output of jpg2pdf from printing to the terminal
-        if (system(systemString) == 11) {
-            printf("CRASH\n");
-            return 0;
+        crashDetected = 0;
+
+        // This currently isn't working; the return value isn't correct
+        while (!crashDetected) {
+            /* generate JPG */
+
+            systemReturnValue = system(systemString);
+            if (DEBUG) printf(" *** %d ***", systemReturnValue);
+
+            if (systemReturnValue == 11) {
+                printf("\nProgram crash in jpg2pdf-%d!\n", i);
+                // Save the JPG file
+                crashDetected = 1;
+            } else if (systemReturnValue == -1) {
+                failureCount++;
+            } else if (systemReturnValue == 0) {
+                successCount++;
+            }
+
+            // This is here just for testing
+            if (iterationCount > 100) {
+                break;
+            }
+
+            printf("\r%d iterations (%d successes, %d failures)", iterationCount++, successCount, failureCount);
+            fflush(stdout);
         }
-
-        // The carriage return ("\r") moves the cursor to the line start
-        // This prevents this line from printing many times
-        // Instead it just overwrites itself
-        // This gives the effect that the number is updating in place
-        printf("\r%d iterations...", i++);
-
-        // This ensures that every line is printed (not just some of them)
-        fflush(stdout);
     }
 
     printf("\n");

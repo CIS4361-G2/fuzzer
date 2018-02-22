@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
     } else {
         printf("Error: Incorrect execution format.\n");
         printf("Execution format: jpg2pdf [inputFileName]\n");
-        return 0;
+        return -1;
     }
 }
 
@@ -139,7 +139,8 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
             }
 
             return TRUE;
-        } else if ((wrk == 0xFFFF) | (wrk == 0xFFD9)) {
+        // } else if ((wrk == 0xFFFF) | (wrk == 0xFFD9)) {
+        } else if ((wrk == 0xFFFF) || (wrk == 0xFFD9)) {
             return FALSE;
         }
 
