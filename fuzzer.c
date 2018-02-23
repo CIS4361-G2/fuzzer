@@ -11,6 +11,7 @@ typedef struct Jpgfileinfo {
 	char *fileName;
 	unsigned long fileSize;
 } JPGFile;
+
 // Modifies the given number of bits using
 // limitations given via paramaters. The
 // JPGFile itself is modified, so nothing
@@ -21,17 +22,18 @@ void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int e
 	int i = 0;
 	int k = 0;
 	char curChar;
+
 	fseek(file->jpgFile, 0, SEEK_SET);
+
 	for (i = 0; i < file -> fileSize; i++) {
 		curChar = fgetc(file->jpgFile);
+
 		for (k = 0; k < 8; k++) {
 			// Not 100% sure that this is correct.
 			bits[i + k] = (curChar & 128);
 			curChar <<= 1;
 		}
 	}
-
-
 }
 
 // Build a file name string with "_copy" appended
@@ -67,7 +69,8 @@ char *createJPGCopyFileName(char *jpgSourceFileName)
     // Example: "example_copy" <- example.jpg
     strcat(appendedString, appendage);
 
-    // Add the rest of the filename; from (and including) '.' to the end of the filename
+    // Add the rest of the filename
+    // From (and including) '.' to the end of the filename
     // Example: "example_copy.jpg" <- example.jpg
     strcat(appendedString, &jpgSourceFileName[i]);
 
