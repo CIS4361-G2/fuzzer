@@ -22,49 +22,49 @@ typedef struct JPGFile {
 } JPGFile;
 
 char *int2bin(char n) {
-	// determine the number of bits needed ("sizeof" returns bytes)
-	int nbits = sizeof(n) * 8;
-	char *s = malloc(nbits + 1);  // +1 for '\0' terminator
-	s[nbits] = '\0';
-	// forcing evaluation as an unsigned value prevents complications
-	// with negative numbers at the left-most bit
-	unsigned int u = *(unsigned int*)&n;
-	int i;
-	unsigned int mask = 1 << (nbits - 1); // fill in values right-to-left
-	for (i = 0; i < nbits; i++, mask >>= 1)
-		s[i] = ((u & mask) != 0) + '0';
-	return s;
+    // determine the number of bits needed ("sizeof" returns bytes)
+    int nbits = sizeof(n) * 8;
+    char *s = malloc(nbits + 1);  // +1 for '\0' terminator
+    s[nbits] = '\0';
+    // forcing evaluation as an unsigned value prevents complications
+    // with negative numbers at the left-most bit
+    unsigned int u = *(unsigned int*)&n;
+    int i;
+    unsigned int mask = 1 << (nbits - 1); // fill in values right-to-left
+    for (i = 0; i < nbits; i++, mask >>= 1)
+        s[i] = ((u & mask) != 0) + '0';
+    return s;
 }
 
 // Returns an array of bits from the given
 // JPGFile
 char *JPGtoBits(JPGFile *jpgFile) {
-	FILE *file = jpgFile->jpgFile;
-	int numBits = jpgFile->fileSize * 8;
-	char *bits = (char*)calloc(numBits + 1, sizeof(int));
-	char *byte;
-	int i = 0;
-	int k = 0;
-	int c;
+    FILE *file = jpgFile->jpgFile;
+    int numBits = jpgFile->fileSize * 8;
+    char *bits = (char*)calloc(numBits + 1, sizeof(int));
+    char *byte;
+    int i = 0;
+    int k = 0;
+    int c;
 
-	if (file == NULL) {
-		printf("jpgtobits: file is null!\n");
-	}
+    if (file == NULL) {
+        printf("jpgtobits: file is null!\n");
+    }
 
-	fseek(file, 0, SEEK_SET);
-	if (DEBUG) printf("ftell() is %ld\n", ftell(file));
-	if (feof(file)) {
-		printf("End of file reached before we begin!\n");
-	}
-	while ((c = fgetc(file)) != EOF) {
-		c = (char)c;
-		byte = int2bin(c);
-	//	if (DEBUG) printf("c is %c, byte is %s\n", c, byte);
-	    strcat(bits, byte);
-	}
+    fseek(file, 0, SEEK_SET);
+    if (DEBUG) printf("ftell() is %ld\n", ftell(file));
+    if (feof(file)) {
+        printf("End of file reached before we begin!\n");
+    }
+    while ((c = fgetc(file)) != EOF) {
+        c = (char)c;
+        byte = int2bin(c);
+    //  if (DEBUG) printf("c is %c, byte is %s\n", c, byte);
+        strcat(bits, byte);
+    }
 
-	bits[numBits] = '\0';
-	return bits;
+    bits[numBits] = '\0';
+    return bits;
 }
 
 // Modifies the given number of bits using
@@ -72,9 +72,9 @@ char *JPGtoBits(JPGFile *jpgFile) {
 // JPGFile itself is modified, so nothing
 // is returned.
 void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int excludeFirst, int excludeLast) {
-	char *bits = JPGtoBits(file);
-	int i = 0;
-	printf("bits %s\n", bits);
+    char *bits = JPGtoBits(file);
+    int i = 0;
+    printf("bits %s\n", bits);
 }
 
 // Clone a JPG file into a newly created JPG file
@@ -171,8 +171,8 @@ int main(int argc, char *argv[])
     int crashDetected = 0;
 
 
-	// This is just here for testing
-	modifyBits(jpgCopy, 0, jpgCopy->fileSize * 8, 1, 0, 0);
+    // This is just here for testing
+    modifyBits(jpgCopy, 0, jpgCopy->fileSize * 8, 1, 0, 0);
 
     for (i = start; i <= end; i++)
     {
