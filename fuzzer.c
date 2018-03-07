@@ -62,7 +62,6 @@ char *JPGtoBits(JPGFile *jpgFile) {
 	//	if (DEBUG) printf("c is %c, byte is %s\n", c, byte);
 	    strcat(bits, byte);
 	}
-		
 
 	bits[numBits] = '\0';
 	return bits;
