@@ -21,6 +21,11 @@ typedef struct JPGFile {
     unsigned long fileSize;
 } JPGFile;
 
+// Function definitions
+char *JPGtoBits(JPGFile *jpgFile);
+void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int excludeFirst, int excludeLast);
+JPGFile *copyJPG(FILE *jpgSource);
+
 // Returns an array of bits from the given
 // JPGFile
 char *JPGtoBits(JPGFile *jpgFile) {
