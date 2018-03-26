@@ -93,7 +93,7 @@ JPGFile *copyJPG(FILE *jpgSource)
     fseek(jpgSource, 0, SEEK_SET);
 
     // Attempt to create a new file in write-binary mode (for JPG copy)
-    jpgCopy = fopen(JPG_FILE, "rwb");
+    jpgCopy = fopen(JPG_FILE, "rwb+");
 
     if (jpgCopy == NULL) {
         printf("FUZZER: Cannot create copied JPG file.\n");
@@ -152,8 +152,7 @@ int main(int argc, char *argv[])
     // Create a copy of the source JPG file
     JPGFile *jpgCopy = copyJPG(jpgSource);
     if (jpgCopy == NULL) {
-        printf("FUZZER: Cannot create JPG copy");
-        fclose(jpgSource);
+        printf("FUZZER: Cannot create JPG copy\n");
         return -1;
     }
 
