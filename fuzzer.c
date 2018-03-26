@@ -35,6 +35,8 @@ char *JPGtoBits(JPGFile *jpgFile) {
     int i = 0;
     int k = 0;
     int c;
+	char *string = (char*)malloc(sizeof(char) * 2);
+	string[1] = '\0';
 
     if (file == NULL) {
         printf("jpgtobits: file is null!\n");
@@ -46,9 +48,9 @@ char *JPGtoBits(JPGFile *jpgFile) {
         printf("End of file reached before we begin!\n");
     }
     while ((c = fgetc(file)) != EOF) {
-        c = (char)c;
+        string[0] = (char)c;
     //  if (DEBUG) printf("c is %c, byte is %s\n", c, byte);
-        strcat(nibbles, c);
+        strcat(nibbles, string);
     }
 
 	nibbles[jpgFile->fileSize] = '\0';
