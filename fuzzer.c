@@ -51,8 +51,6 @@ char *JPGtoBits(JPGFile *jpgFile) {
     }
     while ((c = fgetc(file)) != EOF) {
         string[0] = (char)c;
-        if (DEBUG)
-            printf("c is %d\n", (int) c);
         strcat(bytes, string);
     }
 
@@ -74,7 +72,7 @@ void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int e
     int charIndexEnd;
     int startBitAt;
     int endBitAt;
-    char replacementChar;
+    unsigned char replacementChar;
     char charToReplace;
 	for (i = 0; i < bitsToChange; i++) {
         // Determine the start and end bit range.
@@ -94,15 +92,9 @@ void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int e
             k = k - 8;
         }
         endBitAt = k;
-        if(DEBUG) {
-            for(k = 0; k < 100; k++) {
-                replacementChar = getRandomChar(0, 255);
-                printf("random char %d is %d\n", k, (int) replacementChar);
-            }
-        }
 
         // Get a char that has the first startBitAt bits "locked"
-
+        
 	}
 }
 // Assumes 0 <= max <= RAND_MAX
@@ -130,6 +122,8 @@ long random_at_most(long max) {
     return x/bin_size;
 }
 
+// Returns a character that has the int value between
+// lowerBound and upperBound
 char getRandomChar(int lowerBound, int upperBound) {
     return ((char) random_at_most(lowerBound + upperBound) - lowerBound);
 }
