@@ -2,3 +2,7 @@ a.out
 *.obj
 *.exe
 .vs/
+fuzzer
+fuzzer_input_file.jpg
+jpg2pdf-0
+
