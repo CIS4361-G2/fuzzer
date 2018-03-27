@@ -174,10 +174,6 @@ JPGFile *copyJPG(FILE *jpgSource)
         fputc(fgetc(jpgSource), jpgCopy);
     }
 
-    // File must be closed at the end to save it to disk. Then we can reopen it.
-    fclose(jpgCopy);
-    jpgCopy = fopen(JPG_FILE, "rwb");
-
     file->jpgFile = jpgCopy;
     file->fileSize = jpgLength;
 
