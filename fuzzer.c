@@ -63,7 +63,7 @@ char *JPGtoBits(JPGFile *jpgFile) {
 // JPGFile itself is modified, so nothing
 // is returned.
 void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int excludeFirst, int excludeLast) {
-	char *charString = JPGtoBits(file);
+    char *charString = JPGtoBits(file);
     int i;
     int k;
     int startAt;
@@ -74,10 +74,10 @@ void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int e
     int endBitAt;
     unsigned char replacementChar;
     char charToReplace;
-	for (i = 0; i < bitsToChange; i++) {
+    for (i = 0; i < bitsToChange; i++) {
         // Determine the start and end bit range.
-		startAt = startBit + excludeFirst;
-		endAt = endBit + excludeLast;
+        startAt = startBit + excludeFirst;
+        endAt = endBit + excludeLast;
 
         // Obtain the char index for the bit range.
         charIndexStart = startAt / 8;
@@ -94,8 +94,8 @@ void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int e
         endBitAt = k;
 
         // Get a char that has the first startBitAt bits "locked"
-        
-	}
+
+    }
 }
 // Assumes 0 <= max <= RAND_MAX
 // Returns in the closed interval [0, max]
