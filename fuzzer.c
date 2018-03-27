@@ -92,9 +92,17 @@ JPGFile *copyJPG(FILE *jpgSource)
     jpgLength = ftell(jpgSource);
     fseek(jpgSource, 0, SEEK_SET);
 
-    // Attempt to create a new file in write-binary mode (for JPG copy)
-    jpgCopy = fopen(JPG_FILE, "rwb+");
 
+    // Attempt to create a new file in write-binary mode (for JPG copy)
+    jpgCopy = fopen(JPG_FILE, "rwb");
+
+    if (jpgCopy == NULL) {
+        // Attempt to see if the file is missing. Let's create the file first, then see if the problem persists.
+        jpgCopy = fopen(JPG_FILE, "wb");
+        fclose(jpgCopy);
+        jpgCopy = fopen(JPG_FILE, "rwb");
+    }
+    
     if (jpgCopy == NULL) {
         printf("FUZZER: Cannot create copied JPG file.\n");
         fclose(jpgSource);
