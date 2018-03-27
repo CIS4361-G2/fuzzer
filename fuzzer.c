@@ -23,10 +23,12 @@ typedef struct JPGFile {
 
 // Function definitions
 char *JPGtoBits(JPGFile *jpgFile);
-void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int excludeFirst, int excludeLast);
+void modifyBits(JPGFile *file, int startByte, int endByte, int bytesToChange);
+void saveJPGFile(unsigned char *bytes, int jpgLength, char *destination);
 JPGFile *copyJPG(FILE *jpgSource, char *destination);
 long random_at_most(long max);
 char getRandomChar(int lowerBound, int upperBound);
+int getRandomInt(int lowerBound, int upperBound);
 
 // Returns an array of bits from the given
 // JPGFile
@@ -37,7 +39,7 @@ char *JPGtoBits(JPGFile *jpgFile) {
     int i = 0;
     int k = 0;
     int c;
-    char *string = (char*)malloc(sizeof(char) * 2);
+    unsigned char *string = (char*)malloc(sizeof(char) * 2);
     string[1] = '\0';
 
     if (file == NULL) {
@@ -58,44 +60,46 @@ char *JPGtoBits(JPGFile *jpgFile) {
     return bytes;
 }
 
-// Modifies the given number of bits using
+// Modifies the given number of bytes using
 // limitations given via paramaters. The
 // JPGFile itself is modified, so nothing
 // is returned.
-void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int excludeFirst, int excludeLast) {
-    char *charString = JPGtoBits(file);
+void modifyBits(JPGFile *file, int startByte, int endByte, int bytesToChange) {
+    unsigned char *bytes = JPGtoBits(file);
     int i;
-    int k;
-    int startAt;
-    int endAt;
-    int charIndexStart;
-    int charIndexEnd;
-    int startBitAt;
-    int endBitAt;
     unsigned char replacementChar;
-    char charToReplace;
-    for (i = 0; i < bitsToChange; i++) {
-        // Determine the start and end bit range.
-        startAt = startBit + excludeFirst;
-        endAt = endBit + excludeLast;
-
-        // Obtain the char index for the bit range.
-        charIndexStart = startAt / 8;
-        charIndexEnd = endAt / 8;
-
-        // Determine how many bits inside each char we are limited to.
-        while(k >= 8) {
-            k = k - 8;
-        }
-        startBitAt = k;
-        while(k >= 8) {
-            k = k - 8;
-        }
-        endBitAt = k;
-
-        // Get a char that has the first startBitAt bits "locked"
-
+    int byteToChange;
+    if(endByte >= file->fileSize) {
+        printf("FUZZER: Invalid end byte specified for modification. Aborting.");
+        return;
     }
+    if(startByte < 0) {
+        printf("FUZZER: Invalid start byte specified for modification. Aborting.");
+        return;
+    }
+    for (i = 0; i < bytesToChange; i++) {
+        byteToChange = getRandomInt(startByte, endByte);
+        replacementChar = getRandomChar(0, 255);
+        bytes[byteToChange] = replacementChar;
+        saveJPGFile(bytes, file->fileSize, JPG_FILE);
+    }
+}
+
+void saveJPGFile(unsigned char *bytes, int jpgLength, char *destination) {
+    // Attempt to create a new file in write-binary mode (for JPG copy)
+    FILE *jpgCopy = fopen(destination, "w+b");
+    int i;
+    if (jpgCopy == NULL) {
+        // Attempt to see if the file is missing. Let's create the file first, then see if the problem persists.
+        printf("FUZZER: Cannot save JPG file %s\n", destination);
+        return;
+    }
+
+    // Copy the JPG file byte by byte
+    for (i = 0; i < jpgLength; i++) {
+        fputc(bytes[i], jpgCopy);
+    }
+    fclose(jpgCopy);
 }
 // Assumes 0 <= max <= RAND_MAX
 // Returns in the closed interval [0, max]
@@ -128,6 +132,9 @@ char getRandomChar(int lowerBound, int upperBound) {
     return ((char) random_at_most(lowerBound + upperBound) - lowerBound);
 }
 
+int getRandomInt(int lowerBound, int upperBound) {
+    return ((int) random_at_most(lowerBound + upperBound) - lowerBound);
+}
 
 
 // Clone a JPG file into a newly created JPG file
@@ -229,7 +236,7 @@ int main(int argc, char *argv[])
 
 
     // This is just here for testing
-    modifyBits(jpgCopy, 0, jpgCopy->fileSize * 8, 1, 0, 0);
+    modifyBits(jpgCopy, 0, jpgCopy->fileSize - 1, 1);
 
     for (i = start; i <= end; i++)
     {
