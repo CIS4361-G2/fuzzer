@@ -37,8 +37,8 @@ char *JPGtoBits(JPGFile *jpgFile) {
     int i = 0;
     int k = 0;
     int c;
-	char *string = (char*)malloc(sizeof(char) * 2);
-	string[1] = '\0';
+    char *string = (char*)malloc(sizeof(char) * 2);
+    string[1] = '\0';
 
     if (file == NULL) {
         printf("jpgtobits: file is null!\n");
@@ -51,11 +51,11 @@ char *JPGtoBits(JPGFile *jpgFile) {
     }
     while ((c = fgetc(file)) != EOF) {
         string[0] = (char)c;
-    //  if (DEBUG) printf("c is %c, byte is %s\n", c, byte);
+        //  if (DEBUG) printf("c is %c, byte is %s\n", c, byte);
         strcat(nibbles, string);
     }
 
-	nibbles[jpgFile->fileSize] = '\0';
+    nibbles[jpgFile->fileSize] = '\0';
     return nibbles;
 }
 
@@ -107,22 +107,22 @@ long random_at_most(long max) {
         printf("FUZZER: random_at_most: max value is greater than RAND_MAX\n");
         return -1;
     }
-  unsigned long
+    unsigned long
     // max <= RAND_MAX < ULONG_MAX, so this is okay.
     num_bins = (unsigned long) max + 1,
     num_rand = (unsigned long) RAND_MAX + 1,
     bin_size = num_rand / num_bins,
     defect   = num_rand % num_bins;
 
-  long x;
-  do {
-   x = random();
-  }
-  // This is carefully written not to overflow
-  while (num_rand - defect <= (unsigned long)x);
+    long x;
+    do {
+        x = random();
+    }
+    // This is carefully written not to overflow
+    while (num_rand - defect <= (unsigned long)x);
 
-  // Truncated division is intentional
-  return x/bin_size;
+    // Truncated division is intentional
+    return x/bin_size;
 }
 
 char getRandomChar(int lowerBound, int upperBound) {
@@ -162,7 +162,7 @@ JPGFile *copyJPG(FILE *jpgSource)
         fclose(jpgCopy);
         jpgCopy = fopen(JPG_FILE, "rwb");
     }
-    
+
     if (jpgCopy == NULL) {
         printf("FUZZER: Cannot create copied JPG file.\n");
         fclose(jpgSource);
