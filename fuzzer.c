@@ -24,7 +24,7 @@ typedef struct JPGFile {
 // Function definitions
 char *JPGtoBits(JPGFile *jpgFile);
 void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int excludeFirst, int excludeLast);
-JPGFile *copyJPG(FILE *jpgSource);
+JPGFile *copyJPG(FILE *jpgSource, char *destination);
 long random_at_most(long max);
 char getRandomChar(int lowerBound, int upperBound);
 
@@ -139,7 +139,7 @@ char getRandomChar(int lowerBound, int upperBound) {
 // Clone a JPG file into a newly created JPG file
 // jpgInputFile must already be openned elsewhere
 // jpgCopyFileName will be opened in this function
-JPGFile *copyJPG(FILE *jpgSource)
+JPGFile *copyJPG(FILE *jpgSource, char *destination)
 {
     FILE *jpgCopy;
     int i = 0;
@@ -161,7 +161,7 @@ JPGFile *copyJPG(FILE *jpgSource)
 
 
     // Attempt to create a new file in write-binary mode (for JPG copy)
-    jpgCopy = fopen(JPG_FILE, "w+b");
+    jpgCopy = fopen(destination, "w+b");
 
     if (jpgCopy == NULL) {
         // Attempt to see if the file is missing. Let's create the file first, then see if the problem persists.
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
     }
 
     // Create a copy of the source JPG file
-    JPGFile *jpgCopy = copyJPG(jpgSource);
+    JPGFile *jpgCopy = copyJPG(jpgSource, JPG_FILE);
     if (jpgCopy == NULL) {
         printf("FUZZER: Cannot create JPG copy\n");
         fclose(jpgSource);
