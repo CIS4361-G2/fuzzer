@@ -25,6 +25,8 @@ typedef struct JPGFile {
 char *JPGtoBits(JPGFile *jpgFile);
 void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int excludeFirst, int excludeLast);
 JPGFile *copyJPG(FILE *jpgSource);
+long random_at_most(long max);
+char getRandomChar(int lowerBound, int upperBound);
 
 // Returns an array of bits from the given
 // JPGFile
@@ -63,13 +65,71 @@ char *JPGtoBits(JPGFile *jpgFile) {
 // is returned.
 void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int excludeFirst, int excludeLast) {
 	char *charString = JPGtoBits(file);
-    int i = 0;
+    int i;
+    int k;
+    int startAt;
+    int endAt;
+    int charIndexStart;
+    int charIndexEnd;
+    int startBitAt;
+    int endBitAt;
+    char replacementChar;
 	for (i = 0; i < bitsToChange; i++) {
-		int startAt = startBit + excludeFirst;
-		int endAt = endBit + excludeLast;
+        // Determine the start and end bit range.
+		startAt = startBit + excludeFirst;
+		endAt = endBit + excludeLast;
 
+        // Obtain the char index for the bit range.
+        charIndexStart = startAt / 8;
+        charIndexEnd = endAt / 8;
+
+        // Determine how many bits inside each char we are limited to.
+        while(k >= 8) {
+            k = k - 8;
+        }
+        startBitAt = k;
+        while(k >= 8) {
+            k = k - 8;
+        }
+        endBitAt = k;
+        if(DEBUG) {
+            for(k = 0; k < 100; k++) {
+                replacementChar = getRandomChar(0, 255);
+                printf("random char %d is %x\n", k, replacementChar & 0xff);
+            }
+        }
 	}
 }
+// Assumes 0 <= max <= RAND_MAX
+// Returns in the closed interval [0, max]
+long random_at_most(long max) {
+    if(max > RAND_MAX) {
+        printf("FUZZER: random_at_most: max value is greater than RAND_MAX\n");
+        return -1;
+    }
+  unsigned long
+    // max <= RAND_MAX < ULONG_MAX, so this is okay.
+    num_bins = (unsigned long) max + 1,
+    num_rand = (unsigned long) RAND_MAX + 1,
+    bin_size = num_rand / num_bins,
+    defect   = num_rand % num_bins;
+
+  long x;
+  do {
+   x = random();
+  }
+  // This is carefully written not to overflow
+  while (num_rand - defect <= (unsigned long)x);
+
+  // Truncated division is intentional
+  return x/bin_size;
+}
+
+char getRandomChar(int lowerBound, int upperBound) {
+    return ((char) random_at_most(lowerBound + upperBound) - lowerBound);
+}
+
+
 
 // Clone a JPG file into a newly created JPG file
 // jpgInputFile must already be openned elsewhere
