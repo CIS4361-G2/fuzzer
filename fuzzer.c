@@ -187,6 +187,7 @@ int main(int argc, char *argv[])
     int end;
     FILE *jpgSource = NULL;
     char systemString[50];
+    char jpgCrashingFileName[20];
 
     if (DEBUG) printf("\n");
     if (DEBUG) printf("COMMAND-LINE ARGUMENTS\n");
@@ -250,9 +251,13 @@ int main(int argc, char *argv[])
 
             if (DEBUG) printf("systemReturnValue: %d\n", systemReturnValue);
 
-            if (systemReturnValue == SEGMENTATION_FAULT) {
+            // This is here just for testing
+            // if (systemReturnValue == SEGMENTATION_FAULT) {
+            if(true) {
                 printf("\nProgram crash in jpg2pdf-%d!\n", i);
                 // Save the JPG file
+                sprintf(jpgCrashingFileName, "jpg2pdf-%d.jpg", i);
+                copyJPG(jpgCopy->jpgFile, jpgCrashingFileName);
                 crashDetected = 1;
             } else if (systemReturnValue == -1) {
                 failureCount++;
