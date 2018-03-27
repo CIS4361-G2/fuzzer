@@ -32,7 +32,7 @@ char getRandomChar(int lowerBound, int upperBound);
 // JPGFile
 char *JPGtoBits(JPGFile *jpgFile) {
     FILE *file = jpgFile->jpgFile;
-    char *nibbles = (char*)calloc(jpgFile->fileSize + 1, sizeof(int));
+    char *bytes = (char*)calloc(jpgFile->fileSize + 1, sizeof(int));
     char *byte;
     int i = 0;
     int k = 0;
@@ -51,12 +51,13 @@ char *JPGtoBits(JPGFile *jpgFile) {
     }
     while ((c = fgetc(file)) != EOF) {
         string[0] = (char)c;
-        //  if (DEBUG) printf("c is %c, byte is %s\n", c, byte);
-        strcat(nibbles, string);
+        if (DEBUG)
+            printf("c is %d\n", (int) c);
+        strcat(bytes, string);
     }
 
-    nibbles[jpgFile->fileSize] = '\0';
-    return nibbles;
+    bytes[jpgFile->fileSize] = '\0';
+    return bytes;
 }
 
 // Modifies the given number of bits using
@@ -74,6 +75,7 @@ void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int e
     int startBitAt;
     int endBitAt;
     char replacementChar;
+    char charToReplace;
 	for (i = 0; i < bitsToChange; i++) {
         // Determine the start and end bit range.
 		startAt = startBit + excludeFirst;
@@ -95,9 +97,12 @@ void modifyBits(JPGFile *file, int startBit, int endBit, int bitsToChange, int e
         if(DEBUG) {
             for(k = 0; k < 100; k++) {
                 replacementChar = getRandomChar(0, 255);
-                printf("random char %d is %x\n", k, replacementChar & 0xff);
+                printf("random char %d is %d\n", k, (int) replacementChar);
             }
         }
+
+        // Get a char that has the first startBitAt bits "locked"
+
 	}
 }
 // Assumes 0 <= max <= RAND_MAX
@@ -140,6 +145,7 @@ JPGFile *copyJPG(FILE *jpgSource)
     int i = 0;
     int jpgLength;
     JPGFile *file = malloc(sizeof(JPGFile));
+    char c;
 
     // Prepare our struct to store file information
     if (file == NULL) {
@@ -150,22 +156,16 @@ JPGFile *copyJPG(FILE *jpgSource)
     // Read through the end of the JPG file to count the length
     fseek(jpgSource, 0, SEEK_END);
     jpgLength = ftell(jpgSource);
+    if (DEBUG) printf("ftell() is %ld\n", ftell(jpgSource));
     fseek(jpgSource, 0, SEEK_SET);
 
 
     // Attempt to create a new file in write-binary mode (for JPG copy)
-    jpgCopy = fopen(JPG_FILE, "rwb");
+    jpgCopy = fopen(JPG_FILE, "w+b");
 
     if (jpgCopy == NULL) {
         // Attempt to see if the file is missing. Let's create the file first, then see if the problem persists.
-        jpgCopy = fopen(JPG_FILE, "wb");
-        fclose(jpgCopy);
-        jpgCopy = fopen(JPG_FILE, "rwb");
-    }
-
-    if (jpgCopy == NULL) {
         printf("FUZZER: Cannot create copied JPG file.\n");
-        fclose(jpgSource);
         return NULL;
     }
 
@@ -173,6 +173,10 @@ JPGFile *copyJPG(FILE *jpgSource)
     for (i = 0; i < jpgLength; i++) {
         fputc(fgetc(jpgSource), jpgCopy);
     }
+
+    // File must be closed at the end to save it to disk. Then we can reopen it.
+    fclose(jpgCopy);
+    jpgCopy = fopen(JPG_FILE, "rwb");
 
     file->jpgFile = jpgCopy;
     file->fileSize = jpgLength;
@@ -221,6 +225,7 @@ int main(int argc, char *argv[])
     JPGFile *jpgCopy = copyJPG(jpgSource);
     if (jpgCopy == NULL) {
         printf("FUZZER: Cannot create JPG copy\n");
+        fclose(jpgSource);
         return -1;
     }
 
