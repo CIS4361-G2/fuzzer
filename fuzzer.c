@@ -13,8 +13,8 @@
 #define JPG_FILE "fuzzer_input_file.jpg"
 
 // True & False values
-#define false 0
-#define true 1
+#define FALSE 0
+#define TRUE 1
 
 typedef struct JPGFile {
     FILE *jpgFile;
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
 
             // This is here just for testing
             // if (systemReturnValue == SEGMENTATION_FAULT) {
-            if(true) {
+            if(TRUE) {
                 printf("\nProgram crash in jpg2pdf-%d!\n", i);
                 // Save the JPG file
                 sprintf(jpgCrashingFileName, "jpg2pdf-%d.jpg", i);
