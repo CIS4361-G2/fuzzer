@@ -74,7 +74,7 @@ char *JPGtoBits(JPGFile *jpgFile)
     return bytes;
 }
 
-// Modifies the given number of bytes using limitations given via paramaters
+// Modifies the given number of bytes using limitations given via parameters
 // The JPGFile itself is modified, so nothing is returned.
 void modifyBits(JPGFile *file, int startByte, int endByte, int bytesToChange) {
     char *bytes = JPGtoBits(file);
@@ -168,7 +168,7 @@ int getRandomInt(int lowerBound, int upperBound)
 
 
 // Clone a JPG file into a newly created JPG file
-// jpgInputFile must already be openned elsewhere
+// jpgInputFile must already be opened elsewhere
 // jpgCopyFileName will be opened in this function
 JPGFile *copyJPG(FILE *jpgSource, char *destination)
 {
