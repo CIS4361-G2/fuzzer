@@ -24,7 +24,7 @@ typedef struct JPGFile {
 // Function definitions
 char *JPGtoBits(JPGFile *jpgFile);
 void modifyBits(JPGFile *file, int startByte, int endByte, int bytesToChange);
-void saveJPGFile(unsigned char *bytes, int jpgLength, char *destination);
+void saveJPGFile(char *bytes, int jpgLength, char *destination);
 JPGFile *copyJPG(FILE *jpgSource, char *destination);
 long random_at_most(long max);
 char getRandomChar(int lowerBound, int upperBound);
@@ -35,11 +35,8 @@ int getRandomInt(int lowerBound, int upperBound);
 char *JPGtoBits(JPGFile *jpgFile) {
     FILE *file = jpgFile->jpgFile;
     char *bytes = (char*)calloc(jpgFile->fileSize + 1, sizeof(int));
-    char *byte;
-    int i = 0;
-    int k = 0;
     int c;
-    unsigned char *string = (char*)malloc(sizeof(char) * 2);
+    char *string = (char*)malloc(sizeof(char) * 2);
     string[1] = '\0';
 
     if (file == NULL) {
@@ -65,7 +62,7 @@ char *JPGtoBits(JPGFile *jpgFile) {
 // JPGFile itself is modified, so nothing
 // is returned.
 void modifyBits(JPGFile *file, int startByte, int endByte, int bytesToChange) {
-    unsigned char *bytes = JPGtoBits(file);
+    char *bytes = JPGtoBits(file);
     int i;
     unsigned char replacementChar;
     int byteToChange;
@@ -85,7 +82,7 @@ void modifyBits(JPGFile *file, int startByte, int endByte, int bytesToChange) {
     }
 }
 
-void saveJPGFile(unsigned char *bytes, int jpgLength, char *destination) {
+void saveJPGFile(char *bytes, int jpgLength, char *destination) {
     // Attempt to create a new file in write-binary mode (for JPG copy)
     FILE *jpgCopy = fopen(destination, "w+b");
     int i;
@@ -146,7 +143,6 @@ JPGFile *copyJPG(FILE *jpgSource, char *destination)
     int i = 0;
     int jpgLength;
     JPGFile *file = malloc(sizeof(JPGFile));
-    char c;
 
     // Prepare our struct to store file information
     if (file == NULL) {
