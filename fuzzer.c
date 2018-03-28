@@ -12,7 +12,6 @@
 // The name for the generated JPG file(s)
 #define JPG_FILE "fuzzer_input_file.jpg"
 
-// True & False values
 #define FALSE 0
 #define TRUE 1
 
@@ -22,6 +21,7 @@ typedef struct JPGFile {
 } JPGFile;
 
 // Function definitions
+void printError(char *message);
 char *JPGtoBits(JPGFile *jpgFile);
 void modifyBits(JPGFile *file, int startByte, int endByte, int bytesToChange);
 void saveJPGFile(char *bytes, int jpgLength, char *destination);
@@ -30,51 +30,72 @@ long random_at_most(long max);
 char getRandomChar(int lowerBound, int upperBound);
 int getRandomInt(int lowerBound, int upperBound);
 
-// Returns an array of bits from the given
-// JPGFile
-char *JPGtoBits(JPGFile *jpgFile) {
+void printError(char *message)
+{
+    printf("%s\n", message);
+    fflush(stdin);
+    exit(0);
+}
+
+// Returns an array of bits from the given JPG file
+char *JPGtoBits(JPGFile *jpgFile)
+{
     FILE *file = jpgFile->jpgFile;
-    char *bytes = (char*)calloc(jpgFile->fileSize + 1, sizeof(int));
-    int c;
+    char *bytes = (char*) calloc(jpgFile->fileSize + 1, sizeof(int));
     char *string = (char*)malloc(sizeof(char) * 2);
+    int c;
+
+    // Ensure that string is null terminated
     string[1] = '\0';
 
-    if (file == NULL) {
-        printf("jpgtobits: file is null!\n");
+    if (file == NULL)
+    {
+        printError("JPGtoBits(): File is null\n");
     }
 
     fseek(file, 0, SEEK_SET);
+
     if (DEBUG) printf("ftell() is %ld\n", ftell(file));
-    if (feof(file)) {
-        printf("End of file reached before we begin!\n");
+
+    if (feof(file))
+    {
+        printError("JPGtoBits(): End of file reached before beginning\n");
     }
-    while ((c = fgetc(file)) != EOF) {
-        string[0] = (char)c;
+
+    while ((c = fgetc(file)) != EOF)
+    {
+        string[0] = c;
         strcat(bytes, string);
     }
 
+    // Ensure that string is null terminated
     bytes[jpgFile->fileSize] = '\0';
+
     return bytes;
 }
 
-// Modifies the given number of bytes using
-// limitations given via paramaters. The
-// JPGFile itself is modified, so nothing
-// is returned.
+// Modifies the given number of bytes using limitations given via paramaters
+// The JPGFile itself is modified, so nothing is returned.
 void modifyBits(JPGFile *file, int startByte, int endByte, int bytesToChange) {
     char *bytes = JPGtoBits(file);
     int i;
     unsigned char replacementChar;
     int byteToChange;
-    if(endByte >= file->fileSize) {
+
+    if (endByte >= file->fileSize)
+    {
         printf("FUZZER: Invalid end byte specified for modification. Aborting.");
         return;
     }
-    if(startByte < 0) {
+
+    if (startByte < 0)
+    {
         printf("FUZZER: Invalid start byte specified for modification. Aborting.");
         return;
     }
-    for (i = 0; i < bytesToChange; i++) {
+
+    for (i = 0; i < bytesToChange; i++)
+    {
         byteToChange = getRandomInt(startByte, endByte);
         replacementChar = getRandomChar(0, 255);
         bytes[byteToChange] = replacementChar;
@@ -82,54 +103,66 @@ void modifyBits(JPGFile *file, int startByte, int endByte, int bytesToChange) {
     }
 }
 
-void saveJPGFile(char *bytes, int jpgLength, char *destination) {
+void saveJPGFile(char *bytes, int jpgLength, char *destination)
+{
     // Attempt to create a new file in write-binary mode (for JPG copy)
     FILE *jpgCopy = fopen(destination, "w+b");
     int i;
-    if (jpgCopy == NULL) {
+
+    if (jpgCopy == NULL)
+    {
         // Attempt to see if the file is missing. Let's create the file first, then see if the problem persists.
         printf("FUZZER: Cannot save JPG file %s\n", destination);
         return;
     }
 
     // Copy the JPG file byte by byte
-    for (i = 0; i < jpgLength; i++) {
+    for (i = 0; i < jpgLength; i++)
+    {
         fputc(bytes[i], jpgCopy);
     }
+
     fclose(jpgCopy);
 }
+
 // Assumes 0 <= max <= RAND_MAX
 // Returns in the closed interval [0, max]
 long random_at_most(long max) {
-    if(max > RAND_MAX) {
+    unsigned long num_bins;
+    unsigned long num_rand;
+    unsigned long bin_size;
+    unsigned long defect;
+    long x;
+
+    if (max > RAND_MAX)
+    {
         printf("FUZZER: random_at_most: max value is greater than RAND_MAX\n");
         return -1;
     }
-    unsigned long
+
     // max <= RAND_MAX < ULONG_MAX, so this is okay.
-    num_bins = (unsigned long) max + 1,
-    num_rand = (unsigned long) RAND_MAX + 1,
-    bin_size = num_rand / num_bins,
+    num_bins = (unsigned long) max + 1;
+    num_rand = (unsigned long) RAND_MAX + 1;
+    bin_size = num_rand / num_bins;
     defect   = num_rand % num_bins;
 
-    long x;
+    // This is carefully written not to overflow
     do {
         x = random();
-    }
-    // This is carefully written not to overflow
-    while (num_rand - defect <= (unsigned long)x);
+    } while (num_rand - defect <= (unsigned long) x);
 
-    // Truncated division is intentional
-    return x/bin_size;
+    // Truncated (integer) division is intentional
+    return x / bin_size;
 }
 
-// Returns a character that has the int value between
-// lowerBound and upperBound
-char getRandomChar(int lowerBound, int upperBound) {
+// Returns a character that has the int value between lowerBound and upperBound
+char getRandomChar(int lowerBound, int upperBound)
+{
     return ((char) random_at_most(lowerBound + upperBound) - lowerBound);
 }
 
-int getRandomInt(int lowerBound, int upperBound) {
+int getRandomInt(int lowerBound, int upperBound)
+{
     return ((int) random_at_most(lowerBound + upperBound) - lowerBound);
 }
 
@@ -145,7 +178,8 @@ JPGFile *copyJPG(FILE *jpgSource, char *destination)
     JPGFile *file = malloc(sizeof(JPGFile));
 
     // Prepare our struct to store file information
-    if (file == NULL) {
+    if (file == NULL)
+    {
         printf("FUZZER: Unable to allocate memory for copied JPG file.\n");
         return NULL;
     }
@@ -160,14 +194,16 @@ JPGFile *copyJPG(FILE *jpgSource, char *destination)
     // Attempt to create a new file in write-binary mode (for JPG copy)
     jpgCopy = fopen(destination, "w+b");
 
-    if (jpgCopy == NULL) {
+    if (jpgCopy == NULL)
+    {
         // Attempt to see if the file is missing. Let's create the file first, then see if the problem persists.
         printf("FUZZER: Cannot create copied JPG file.\n");
         return NULL;
     }
 
     // Copy the JPG file byte by byte
-    for (i = 0; i < jpgLength; i++) {
+    for (i = 0; i < jpgLength; i++)
+    {
         fputc(fgetc(jpgSource), jpgCopy);
     }
 
@@ -186,6 +222,13 @@ int main(int argc, char *argv[])
     char systemString[50];
     char jpgCrashingFileName[20];
 
+    int i = 0;
+    int iterationCount = 0;
+    int successCount = 0;
+    int failureCount = 0;
+    int systemReturnValue = 0;
+    int crashDetected = 0;
+
     if (DEBUG) printf("\n");
     if (DEBUG) printf("COMMAND-LINE ARGUMENTS\n");
     if (DEBUG) printf("argv[0]: %s\n", argv[0]);
@@ -194,7 +237,8 @@ int main(int argc, char *argv[])
     if (DEBUG) printf("argv[3]: %s\n\n", argv[3]);
 
     // Ensure that the command-line arguments are all passed correctly
-    if (argc != 4) {
+    if (argc != 4)
+    {
         printf("Error: Incorrect execution format.\n");
         printf("Execution format: fuzzer [JPG] [start] [end]\n");
         printf("Example: fuzzer example.jpg 0 9\n");
@@ -206,30 +250,26 @@ int main(int argc, char *argv[])
     }
 
     start = atoi(argv[2]);
-    end = atoi(argv[3]);
+    end   = atoi(argv[3]);
 
     // Open the source JPG file
     jpgSource = fopen(jpgSourceName, "rb");
-    if (jpgSource == NULL) {
+
+    if (jpgSource == NULL)
+    {
         printf("FUZZER: Cannot open source JPG\n");
         return -1;
     }
 
     // Create a copy of the source JPG file
     JPGFile *jpgCopy = copyJPG(jpgSource, JPG_FILE);
-    if (jpgCopy == NULL) {
+
+    if (jpgCopy == NULL)
+    {
         printf("FUZZER: Cannot create JPG copy\n");
         fclose(jpgSource);
         return -1;
     }
-
-    int i = 0;
-    int iterationCount = 0;
-    int successCount = 0;
-    int failureCount = 0;
-    int systemReturnValue = 0;
-    int crashDetected = 0;
-
 
     // This is just here for testing
     modifyBits(jpgCopy, 0, jpgCopy->fileSize - 1, 1);
@@ -238,7 +278,8 @@ int main(int argc, char *argv[])
     {
         crashDetected = 0;
 
-        while (!crashDetected) {
+        while (!crashDetected)
+        {
             /* generate JPG */
 
             sprintf(systemString, "./jpg2pdf-%d fuzzer_input_file.jpg > /dev/null", i);
@@ -250,20 +291,26 @@ int main(int argc, char *argv[])
 
             // This is here just for testing
             // if (systemReturnValue == SEGMENTATION_FAULT) {
-            if(TRUE) {
+            if (TRUE)
+            {
                 printf("\nProgram crash in jpg2pdf-%d!\n", i);
                 // Save the JPG file
                 sprintf(jpgCrashingFileName, "jpg2pdf-%d.jpg", i);
                 copyJPG(jpgCopy->jpgFile, jpgCrashingFileName);
                 crashDetected = 1;
-            } else if (systemReturnValue == -1) {
+            }
+            else if (systemReturnValue == -1)
+            {
                 failureCount++;
-            } else if (systemReturnValue == 0) {
+            }
+            else if (systemReturnValue == 0)
+            {
                 successCount++;
             }
 
             // This is here just for testing
-            if (iterationCount > 10) {
+            if (iterationCount > 10)
+            {
                 break;
             }
 
@@ -280,7 +327,7 @@ int main(int argc, char *argv[])
     fclose(jpgSource);
 
 
-    // Signal that the program reached the end of execution...
+    // State that the program reached the end of execution...
     if (DEBUG) printf("The end of the road...\n");
 
     return 0;
