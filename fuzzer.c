@@ -13,7 +13,7 @@
 #define JPG_FILE "fuzzer_input_file.jpg"
 
 #define FALSE 0
-#define TRUE 1
+#define TRUE  1
 
 typedef struct JPGFile {
     FILE *jpgFile;
