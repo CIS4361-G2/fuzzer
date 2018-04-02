@@ -271,31 +271,23 @@ int main(int argc, char *argv[])
         return -1;
     }
 
-    // This is just here for testing
-    modifyBits(jpgCopy, 0, jpgCopy->fileSize - 1, 1);
-
     for (i = start; i <= end; i++)
     {
         crashDetected = 0;
-
+        sprintf(systemString, "exes/jpg2pdf-%d fuzzer_input_file.jpg > /dev/null", i);
+        puts(systemString);
         while (!crashDetected)
         {
             /* generate JPG */
-
-            sprintf(systemString, "./jpg2pdf-%d fuzzer_input_file.jpg > /dev/null", i);
-            puts(systemString);
-
             systemReturnValue = system(systemString);
 
             if (DEBUG) printf("systemReturnValue: %d\n", systemReturnValue);
 
-            // This is here just for testing
-            // if (systemReturnValue == SEGMENTATION_FAULT) {
-            if (TRUE)
+            if (systemReturnValue == SEGMENTATION_FAULT)
             {
                 printf("\nProgram crash in jpg2pdf-%d!\n", i);
                 // Save the JPG file
-                sprintf(jpgCrashingFileName, "jpg2pdf-%d.jpg", i);
+                sprintf(jpgCrashingFileName, "images/jpg2pdf-%d.jpg", i);
                 copyJPG(jpgCopy->jpgFile, jpgCrashingFileName);
                 crashDetected = 1;
             }
@@ -303,20 +295,17 @@ int main(int argc, char *argv[])
             {
                 failureCount++;
             }
-            else if (systemReturnValue == 0)
+            else if (systemReturnValue == 65280)
             {
                 successCount++;
             }
 
-            // This is here just for testing
-            if (iterationCount > 10)
-            {
-                break;
-            }
-
             iterationCount++;
-            printf("\r%d iterations (%d successes, %d failures)\n\n", iterationCount, successCount, failureCount);
+            printf("\r%d iterations (%d successes, %d failures)", iterationCount, successCount, failureCount);
             fflush(stdout);
+
+            // Modify image
+            modifyBits(jpgCopy, 0, jpgCopy->fileSize - 1, 1);
         }
     }
 
