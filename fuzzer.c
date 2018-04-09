@@ -4,7 +4,7 @@
 
 // Set to 1 to print debug messages
 // Set to 0 to suppress debug messages
-#define DEBUG 1
+#define DEBUG 0
 
 // System exit codes
 #define SEGMENTATION_FAULT 35584

@@ -17,6 +17,14 @@ BOOL  getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk);
 void  writeCrossReferenceTable(FILE *aStream, DWORD objectPosArray[], int Count);
 void  writeContentsObject(FILE *aStream, DWORD objectPosArray[], int *objectIndex, int w, int h);
 int   jpgToPDF(const char *openName, const char *saveName);
+void printError(char *string);
+
+void printError(char *message)
+{
+    printf("%s\n", message);
+    fflush(stdin);
+    exit(0);
+}
 
 int main(int argc, char *argv[])
 {
@@ -82,15 +90,18 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
 
     /* JFIF */
     if (fread(&wrk, 2, 1, jpgStream) < 1) {
+        printError("Unable to determine JPG type.\n");
         return FALSE;
     }
 
-    if (swapEndian(wrk) != 0xFFD8) {
+    if (swapEndian(wrk) == 0xFFD8) {
+        printError("Unable to swap Endian.\n");
         return FALSE;
     }
 
     while (1) {
         if (fread(&wrk, 2, 1, jpgStream) < 1) {
+            printError("Invalid JPG (Check 1).\n");
             return FALSE;
         }
 
@@ -100,30 +111,33 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
         if ((wrk == SOF0) | (wrk == SOF2)) {
             /* Skip Segment Length  */
             if (fseek(jpgStream, ftell(jpgStream) + 2, SEEK_SET)) {
+                printError("Unable to Skip Segment Length.\n");
                 return FALSE;
             }
 
             /* Skip Sample */
             if (fseek(jpgStream, ftell(jpgStream) + 1, SEEK_SET)) {
+                printError("Unable to Skip Sample.\n");
                 return FALSE;
             }
 
             /* Height */
             if (fread(&wrk, 2, 1, jpgStream) < 1) {
-                return FALSE;
-            }
+                printError("Unable to determine Height.\n");
+                return FALSE;            }
 
             *aHeight = swapEndian(wrk);
 
             /* Width */
             if (fread(&wrk, 2, 1, jpgStream) < 1) {
-                return FALSE;
-            }
+                printError("Unable to determine Width.\n");
+                return FALSE;            }
 
             *aWidth = swapEndian(wrk);
 
             /* ColorMode */
             if (fread(&sampling, 1, 1, jpgStream) < 1) {
+                printError("Unable to determine ColorMode.\n");
                 return FALSE;
             }
 
@@ -134,22 +148,25 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
                 case 4: /* CMYK */
                     *cmyk = TRUE;
                     break;
-                default: /* ???  */
+                default: /* ???  */ {
+                    printError("Invalid Colour Mode\n");
                     return FALSE;
+                }
             }
 
             return TRUE;
         // } else if ((wrk == 0xFFFF) | (wrk == 0xFFD9)) {
         } else if ((wrk == 0xFFFF) || (wrk == 0xFFD9)) {
-            return FALSE;
-        }
+            printError("Invalid JPG (Check 2)\n");
+            return FALSE;          }
 
         /* Skip Segment */
         if (fread(&wrk, 2, 1, jpgStream) < 1) {
-            return FALSE;
-        }
+            printError("Invalid JPG (Check 3)\n");
+            return FALSE;          }
 
         if (fseek(jpgStream, ftell(jpgStream) + swapEndian(wrk) - 2, SEEK_SET)) {
+            printError("Invalid JPG (Check 4)\n");
             return FALSE;
         }
     }
