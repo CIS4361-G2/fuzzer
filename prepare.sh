@@ -1,6 +1,6 @@
 #! /bin/bash
 mkdir exes;
-mkdir imgs;
+mkdir images;
 gcc -Wall -o fuzzer fuzzer.c;
 
 for i in {0..9};

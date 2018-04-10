@@ -23,7 +23,6 @@ void printError(char *message)
 {
     printf("%s\n", message);
     fflush(stdin);
-    exit(0);
 }
 
 int main(int argc, char *argv[])
@@ -94,7 +93,7 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
         return FALSE;
     }
 
-    if (swapEndian(wrk) == 0xFFD8) {
+    if (swapEndian(wrk) != 0xFFD8) {
         printError("Unable to swap Endian.\n");
         return FALSE;
     }
@@ -102,6 +101,8 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
     while (1) {
         if (fread(&wrk, 2, 1, jpgStream) < 1) {
             printError("Invalid JPG (Check 1).\n");
+            int *p = NULL;
+            wrk = *p;
             return FALSE;
         }
 
