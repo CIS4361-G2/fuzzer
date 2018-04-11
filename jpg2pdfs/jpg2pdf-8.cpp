@@ -17,6 +17,13 @@ BOOL  getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk);
 void  writeCrossReferenceTable(FILE *aStream, DWORD objectPosArray[], int Count);
 void  writeContentsObject(FILE *aStream, DWORD objectPosArray[], int *objectIndex, int w, int h);
 int   jpgToPDF(const char *openName, const char *saveName);
+void printError(char *string);
+
+void printError(char *message)
+{
+    printf("%s\n", message);
+    fflush(stdin);
+}
 
 int main(int argc, char *argv[])
 {
@@ -82,15 +89,24 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
 
     /* JFIF */
     if (fread(&wrk, 2, 1, jpgStream) < 1) {
+        printError((char *)"Unable to determine JPG type.\n");
         return FALSE;
     }
 
     if (swapEndian(wrk) != 0xFFD8) {
+        printError((char *)"Unable to swap Endian.\n");
         return FALSE;
     }
 
     while (1) {
         if (fread(&wrk, 2, 1, jpgStream) < 1) {
+            printError((char *)"Invalid JPG (Check 1)\n");
+
+/* BUG */
+            int *c = NULL;
+            printf("%d", *c);
+/* BUG */
+
             return FALSE;
         }
 
@@ -100,16 +116,19 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
         if ((wrk == SOF0) | (wrk == SOF2)) {
             /* Skip Segment Length  */
             if (fseek(jpgStream, ftell(jpgStream) + 2, SEEK_SET)) {
+                printError((char *)"Unable to Skip Segment Length.\n");
                 return FALSE;
             }
 
             /* Skip Sample */
             if (fseek(jpgStream, ftell(jpgStream) + 1, SEEK_SET)) {
+                printError((char *)"Unable to Skip Sample.\n");
                 return FALSE;
             }
 
             /* Height */
             if (fread(&wrk, 2, 1, jpgStream) < 1) {
+                printError((char *)"Unable to determine Height.\n");
                 return FALSE;
             }
 
@@ -117,6 +136,7 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
 
             /* Width */
             if (fread(&wrk, 2, 1, jpgStream) < 1) {
+                printError((char *)"Unable to determine Width.\n");
                 return FALSE;
             }
 
@@ -124,6 +144,7 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
 
             /* ColorMode */
             if (fread(&sampling, 1, 1, jpgStream) < 1) {
+                printError((char *)"Unable to determine ColorMode.\n");
                 return FALSE;
             }
 
@@ -134,22 +155,26 @@ BOOL getJPGSize(FILE *jpgStream, WORD *aWidth, WORD *aHeight, BOOL *cmyk)
                 case 4: /* CMYK */
                     *cmyk = TRUE;
                     break;
-                default: /* ???  */
+                default: /* ???  */ {
+                    printError((char *)"Invalid Colour Mode\n");
                     return FALSE;
+                }
             }
 
             return TRUE;
-        // } else if ((wrk == 0xFFFF) | (wrk == 0xFFD9)) {
         } else if ((wrk == 0xFFFF) || (wrk == 0xFFD9)) {
+            printError((char *)"Invalid JPG (Check 2)\n");
             return FALSE;
         }
 
         /* Skip Segment */
         if (fread(&wrk, 2, 1, jpgStream) < 1) {
+            printError((char *)"Invalid JPG (Check 3)\n");
             return FALSE;
         }
 
         if (fseek(jpgStream, ftell(jpgStream) + swapEndian(wrk) - 2, SEEK_SET)) {
+            printError((char *)"Invalid JPG (Check 4)\n");
             return FALSE;
         }
     }
@@ -218,7 +243,7 @@ int jpgToPDF(const char *openName, const char *saveName)
     /* Get JPG size */
     if (getJPGSize(jpgStream, &w, &h, &cmyk) == FALSE) {
         printf("Error: Can not get JPG size.\n");
-        return -1;
+        // return -1;
     }
 
     /* Create PDF File */

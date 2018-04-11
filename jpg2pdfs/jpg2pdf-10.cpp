@@ -218,10 +218,6 @@ int jpgToPDF(const char *openName, const char *saveName)
     /* Get JPG size */
     if (getJPGSize(jpgStream, &w, &h, &cmyk) == FALSE) {
         printf("Error: Can not get JPG size.\n");
-
-        int *c = NULL;
-        printf("%d", *c);
-
         return -1;
     }
 
