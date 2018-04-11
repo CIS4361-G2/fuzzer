@@ -173,7 +173,11 @@ void writeContentsObject(FILE *aStream, DWORD objectPosArray[], int *objectIndex
     int length;
 
     /* Contents */
-    objectPosArray[*objectIndex]  = (DWORD)ftell(aStream);
+/* BUG */
+    // objectPosArray[*objectIndex]  = (DWORD)ftell(aStream);
+    objectPosArray[*objectIndex + (w % 10)]  = (DWORD)ftell(aStream);
+/* BUG */
+
     fprintf(aStream, "%d 0 obj\n", *objectIndex + 1);
     fprintf(aStream, "<< /Length %d 0 R >>\n", *objectIndex + 2);
     fprintf(aStream, "stream\n");
@@ -218,7 +222,7 @@ int jpgToPDF(const char *openName, const char *saveName)
     /* Get JPG size */
     if (getJPGSize(jpgStream, &w, &h, &cmyk) == FALSE) {
         printf("Error: Can not get JPG size.\n");
-        return -1;
+        // return -1;
     }
 
     /* Create PDF File */

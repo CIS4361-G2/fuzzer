@@ -8,6 +8,8 @@
 
 // System exit codes
 #define SEGMENTATION_FAULT 35584
+#define SUCCESS_CODE       0
+#define ERROR_CODE         65280
 
 // The name for the generated JPG file(s)
 #define JPG_FILE "fuzzer_input_file.jpg"
@@ -71,6 +73,8 @@ char *JPGtoBits(JPGFile *jpgFile)
     // Ensure that string is null terminated
     bytes[jpgFile->fileSize] = '\0';
 
+    free(string);
+
     return bytes;
 }
 
@@ -101,6 +105,8 @@ void modifyBits(JPGFile *file, int startByte, int endByte, int bytesToChange) {
         bytes[byteToChange] = replacementChar;
         saveJPGFile(bytes, file->fileSize, JPG_FILE);
     }
+
+    free(bytes);
 }
 
 void saveJPGFile(char *bytes, int jpgLength, char *destination)
@@ -219,8 +225,8 @@ int main(int argc, char *argv[])
     int start;
     int end;
     FILE *jpgSource = NULL;
-    char systemString[50];
-    char jpgCrashingFileName[20];
+    char systemString[50] = {0};
+    char jpgCrashingFileName[50] = {0};
 
     int i = 0;
     int iterationCount = 0;
@@ -228,6 +234,9 @@ int main(int argc, char *argv[])
     int failureCount = 0;
     int systemReturnValue = 0;
     int crashDetected = 0;
+
+    JPGFile *tempJPG;
+    JPGFile *jpgCopy;
 
     if (DEBUG) printf("\n");
     if (DEBUG) printf("COMMAND-LINE ARGUMENTS\n");
@@ -262,7 +271,7 @@ int main(int argc, char *argv[])
     }
 
     // Create a copy of the source JPG file
-    JPGFile *jpgCopy = copyJPG(jpgSource, JPG_FILE);
+    jpgCopy = copyJPG(jpgSource, JPG_FILE);
 
     if (jpgCopy == NULL)
     {
@@ -274,45 +283,59 @@ int main(int argc, char *argv[])
     for (i = start; i <= end; i++)
     {
         crashDetected = 0;
+
+        printf("\nSTARTING PROGRAM jpg2pdf-%d\n", i);
+
+        // Build system string
         sprintf(systemString, "exes/jpg2pdf-%d fuzzer_input_file.jpg > /dev/null", i);
-        puts(systemString);
+        if (DEBUG) puts(systemString);
+
         while (!crashDetected)
         {
-            /* generate JPG */
+            printf("\r%d iterations (%d successes, %d failures)", ++iterationCount, successCount, failureCount);
+            fflush(stdout);
+
+            // Modify image
+            modifyBits(jpgCopy, 0, jpgCopy->fileSize - 1, 1);
+
+            // Run the system string and capture the return value
             systemReturnValue = system(systemString);
 
             if (DEBUG) printf("systemReturnValue: %d\n", systemReturnValue);
 
             if (systemReturnValue == SEGMENTATION_FAULT)
             {
-                printf("\nProgram crash in jpg2pdf-%d!\n", i);
+                printf("Program crash in jpg2pdf-%d!\n\n", i);
                 // Save the JPG file
                 sprintf(jpgCrashingFileName, "images/jpg2pdf-%d.jpg", i);
-                copyJPG(jpgCopy->jpgFile, jpgCrashingFileName);
+                if (DEBUG) printf("%s\n", jpgCrashingFileName);
+                tempJPG = copyJPG(jpgCopy->jpgFile, jpgCrashingFileName);
+                if (DEBUG) printf("Successfully copied file.\n");
                 crashDetected = 1;
+                break;
             }
-            else if (systemReturnValue == -1)
+            else if (systemReturnValue == ERROR_CODE)
             {
                 failureCount++;
             }
-            else if (systemReturnValue == 65280)
+            else if (systemReturnValue == SUCCESS_CODE)
             {
                 successCount++;
             }
-
-            iterationCount++;
-            printf("\r%d iterations (%d successes, %d failures)", iterationCount, successCount, failureCount);
-            fflush(stdout);
-
-            // Modify image
-            modifyBits(jpgCopy, 0, jpgCopy->fileSize - 1, 1);
         }
+        // Reset image to default state for the next program version
+        jpgCopy = copyJPG(jpgSource, JPG_FILE);
+
+        iterationCount = 0;
+        successCount = 0;
+        failureCount = 0;
     }
 
     printf("\n");
 
     // Clean up
     free(jpgCopy);
+    free(tempJPG);
     fclose(jpgSource);
 
 

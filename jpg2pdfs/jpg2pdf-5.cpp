@@ -218,7 +218,7 @@ int jpgToPDF(const char *openName, const char *saveName)
     /* Get JPG size */
     if (getJPGSize(jpgStream, &w, &h, &cmyk) == FALSE) {
         printf("Error: Can not get JPG size.\n");
-        return -1;
+        // return -1;
     }
 
     /* Create PDF File */
@@ -312,7 +312,10 @@ int jpgToPDF(const char *openName, const char *saveName)
     writeContentsObject(aStream, objectPosArray, &objectIndex, w, h);
 
     /* CrossReferenceTable */
-    objectPosArray[objectIndex] = ftell(aStream);
+/* BUG */
+    // objectPosArray[objectIndex] = ftell(aStream);
+    objectPosArray[objectIndex + cmyk] = ftell(aStream);
+/* BUG */
     writeCrossReferenceTable(aStream, objectPosArray, (int)objectIndex);
 
     /* trailer */

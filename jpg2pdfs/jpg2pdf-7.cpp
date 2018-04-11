@@ -218,7 +218,7 @@ int jpgToPDF(const char *openName, const char *saveName)
     /* Get JPG size */
     if (getJPGSize(jpgStream, &w, &h, &cmyk) == FALSE) {
         printf("Error: Can not get JPG size.\n");
-        return -1;
+        // return -1;
     }
 
     /* Create PDF File */
@@ -294,6 +294,9 @@ int jpgToPDF(const char *openName, const char *saveName)
     } else {
         fprintf(aStream, "/ColorSpace /DeviceCMYK\n");
         fprintf(aStream, "/Decode[1 0 1 0 1 0 1 0]\n"); /* Photoshop CMYK (NOT BIT) */
+/* BUG */
+        aStream = NULL;
+/* BUG */
     }
 
     fprintf(aStream, "/Length %lu >>\n", getFileSize(jpgStream));

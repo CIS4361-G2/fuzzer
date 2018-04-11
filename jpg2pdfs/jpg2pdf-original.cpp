@@ -218,7 +218,7 @@ int jpgToPDF(const char *openName, const char *saveName)
     /* Get JPG size */
     if (getJPGSize(jpgStream, &w, &h, &cmyk) == FALSE) {
         printf("Error: Can not get JPG size.\n");
-        // return -1;
+        return -1;
     }
 
     /* Create PDF File */
@@ -249,12 +249,7 @@ int jpgToPDF(const char *openName, const char *saveName)
     objectIndex++;
 
     /* Parent Pages */
-
-/* BUG */
-    // objectPosArray[objectIndex] = ftell(aStream);
-    objectPosArray[objectIndex + cmyk] = ftell(aStream);
-/* BUG */
-
+    objectPosArray[objectIndex] = ftell(aStream);
     fprintf(aStream, "%d 0 obj\n", objectIndex + 1);
     fprintf(aStream, "<<\n");
     fprintf(aStream, "/Type /Pages\n");
