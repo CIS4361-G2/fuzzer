@@ -175,7 +175,7 @@ void writeContentsObject(FILE *aStream, DWORD objectPosArray[], int *objectIndex
     /* Contents */
 /* BUG */
     // objectPosArray[*objectIndex]  = (DWORD)ftell(aStream);
-    objectPosArray[*objectIndex + (w % 10)]  = (DWORD)ftell(aStream);
+    objectPosArray[*objectIndex + w]  = (DWORD)ftell(aStream);
 /* BUG */
 
     fprintf(aStream, "%d 0 obj\n", *objectIndex + 1);
