@@ -306,8 +306,9 @@ int main(int argc, char *argv[])
             if (systemReturnValue == SEGMENTATION_FAULT)
             {
                 printf("Program crash in jpg2pdf-%d!\n\n", i);
+                printf("BUG %d TRIGGERED\n", i);
                 // Save the JPG file
-                sprintf(jpgCrashingFileName, "images/jpg2pdf-%d.jpg", i);
+                sprintf(jpgCrashingFileName, "images/test-%d.jpg", i);
                 if (DEBUG) printf("%s\n", jpgCrashingFileName);
                 tempJPG = copyJPG(jpgCopy->jpgFile, jpgCrashingFileName);
                 if (DEBUG) printf("Successfully copied file.\n");
