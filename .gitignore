@@ -1,0 +1,11 @@
+a.out
+*.obj
+*.exe
+.vs/
+fuzzer
+fuzzer_input_file.jpg
+jpg2pdf-0
+jpg2pdf.pdf
+jpg2pdf*.jpg
+exes/
+images/
